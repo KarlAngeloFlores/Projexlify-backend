@@ -22,9 +22,8 @@ const authService = {
             logInfo(user.email);
             
             const accessToken = generateToken({id: user.id, email: user.email}, '1h' );
-            const refreshToken = generateToken({id: user.id, email: user.email}, '7d');
 
-            return { accessToken, refreshToken };
+            return { accessToken };
 
         } catch (error) {
             throw error;
@@ -270,6 +269,37 @@ const authService = {
             }
         },
 
+        changePassword: async (userId, oldPassword, newPassword) => {
+            
+            try {
+            
+                const user = await userModel.findPasswordById(userId);
+                if(!user) {
+                    throwError('User not found', 404, true);
+                };
+
+                const isMatchOldPassword = await bcrypt.compare(oldPassword, user.password);
+                if(!isMatchOldPassword) {
+                    throwError('Old password do not match');
+                };
+
+                if(oldPassword === newPassword) {
+                    throwError('New password must be different from old password', 400, true);
+                }
+
+                const loginPageURL = `http://localhost:5173`;
+                const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+                await userModel.createNewPassword(user.email, hashedNewPassword);
+                await emailService.sendNotification(user.email, 'Change password', `Your password has been changed successfully. Try logging it again ${loginPageURL}`);
+                
+                return {
+                    message: "Password changed successfully"
+                };
+
+            } catch (error) {
+                throw error;                
+            }
+        }
 
     }
 

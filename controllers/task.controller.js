@@ -1,5 +1,5 @@
 const taskService = require('../services/task.service');
-const { logError, logSuccess, logInfo } = require('../utils/logs.util');
+const { logError, logSuccess } = require('../utils/logs.util');
 const { sendError, sendSuccess, getFriendlyErrorMessage } = require('../utils/util');
 
 
@@ -75,8 +75,8 @@ createTask: async (req, res) => {
         try {
 
             const userId = req.user.id;
-            const { taskId } = req.query;
-            const { projectId, remark } = req.body;
+            // const { taskId } = req.query;
+            const { taskId, projectId, remark } = req.body;
 
             const result = await taskService.deleteTask(userId, taskId, projectId, remark);
             logSuccess(result.message);

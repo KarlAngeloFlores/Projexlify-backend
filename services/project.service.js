@@ -6,7 +6,6 @@ const accessModel = require('../models/access.model');
 const { logInfo } = require('../utils/logs.util');
 const { throwError } = require('../utils/util');
 
-
 const projectService = {
     createProject: async (name, description, userId) => {
         let connection = await db.getConnection();

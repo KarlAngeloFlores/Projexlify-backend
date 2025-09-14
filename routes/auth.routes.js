@@ -11,7 +11,7 @@ router.get('/get_member', auth, authController.getUser);
 router.post('/register', authController.register);
 router.post('/verify', authController.registerAndVerify);
 router.post('/logout', authController.logout);
-router.post('/refresh', authController.refreshToken);
+router.patch('/change_password', auth, authController.changePassword);
 router.post('/forgot_password', authController.forgotPassword);
 router.post('/verify_reset_password', authController.verifyResetPassword);
 router.patch('/confirm_password', authController.confirmNewPassword);

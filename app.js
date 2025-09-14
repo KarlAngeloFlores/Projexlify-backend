@@ -7,7 +7,7 @@ const app = express();
 
 //to add rate limiter
 
-const allowedOrigins = ['http://localhost:5173', ''];
+const allowedOrigins = ['http://localhost:5173', 'http://192.168.1.7:5173'];
 
 app.use(cors({
     origin: allowedOrigins,

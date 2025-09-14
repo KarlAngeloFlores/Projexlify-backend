@@ -73,8 +73,8 @@ const projectController = {
     deleteProject: async (req, res) => {
         try {
             const userId = req.user.id;
-            const { projectId } = req.query;
-            const { remark } = req.body;
+            // const { projectId } = req.query;
+            const { projectId, remark } = req.body;
             
             const result = await projectService.deleteProject(userId, projectId, remark);
             logSuccess(result);

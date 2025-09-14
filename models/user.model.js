@@ -26,6 +26,11 @@ const userModel = {
         const [rows] = await db.query(query, [id]);
         return rows[0];
     },
+    findPasswordById: async (id) => {
+        const query = `SELECT id, email, password FROM users WHERE id = ?`;
+        const [rows] = await db.query(query, [id]);
+        return rows[0];
+    },
     
     /**
      * @verification

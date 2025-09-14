@@ -1,4 +1,4 @@
-const { generateToken, sendError, verifyToken, sendSuccess, getFriendlyErrorMessage } = require('../utils/util');
+const { sendError, sendSuccess, getFriendlyErrorMessage } = require('../utils/util');
 const { logInfo, logSuccess, logError } = require('../utils/logs.util');
 const { accessTokenCookie, refreshTokenCookie } = require('../utils/cookies.util');
 const authService = require('../services/auth.service');
@@ -8,10 +8,9 @@ const authController = {
         try {
             
             const { email, password } = req.body;
-            const {accessToken, refreshToken} = await authService.login(email, password);
+            const {accessToken} = await authService.login(email, password);
 
             res.cookie('accessToken', accessToken, accessTokenCookie());
-            res.cookie('refreshToken', refreshToken, refreshTokenCookie());
             logSuccess('Logged in successfully');
             sendSuccess(res, 200, 'Logged in successfully');
             
@@ -84,7 +83,6 @@ const authController = {
         try {
 
             res.cookie('accessToken', '', accessTokenCookie());
-            res.cookie('refreshToken', '', refreshTokenCookie());
             logSuccess('Logged out successfully');
             sendSuccess(res, 200, { message: 'Logged out successfully' });
 
@@ -159,16 +157,22 @@ const authController = {
         }
     },
 
-    refreshToken: async (req, res) => {
+    changePassword: async (req, res) => {
         try {
+            const userId = req.user.id;
+            const { oldPassword, newPassword } = req.body;
             
-        } catch (error) {
-            logError(error.message);
-            sendError(res, 500, 'Something went wrong. Try again later');
-        }
-    },
+            const result = await authService.changePassword(userId, oldPassword, newPassword);
+            logSuccess(result.message);
+            sendSuccess(res, 200, result);
 
-    
+        } catch (error) {
+            logError(error);
+            const statusCode = error.statusCode || 500;
+            sendError(res, statusCode, getFriendlyErrorMessage(error));
+
+        }
+    }
 }
 
 module.exports = authController;
