@@ -222,9 +222,9 @@ DELETE | `/api/project/delete_task`           | Soft delete task               |
 | Method | Endpoint                   | Description               | Auth Required | Authorization (project access) | Params/Body/Query |
 |--------|----------------------------|---------------------------|---------------|--------------------------------| ------------------|
 | GET    | `/api/access/get_shared`| Get all shared projects from others | ✅ | Any logged-in user  | None |
-| POST    | `/api/access/get_tasks_log`| Give project access to chosen users **(write, read)** | ✅ | None  | **Body:** `{ email, projectId, role }` |
+| POST    | `/api/access/give_access`| Give project access to chosen users **(write, read)** | ✅ | None  | **Body:** `{ email, projectId, role }` |
 | PATCH    | `/api/access/patch_access`| Change project access of the chosen user **(write, read)** | ✅ | None | **Body:** `{ userId, projectId, role }` |
-| DELETE    | `/api/access/patch_access`| Remove all access of the chosen user | ✅ | None  | **Body:** `{ userId, projectId }` |
+| DELETE    | `/api/access/delete_access`| Remove all access of the chosen user | ✅ | None  | **Body:** `{ userId, projectId }` |
 
 
 
