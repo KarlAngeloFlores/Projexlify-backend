@@ -7,10 +7,11 @@ const checkProjectAccess = require('../middlewares/checkProjectAccess.middleware
 
 const router = express.Router();
 
-    router.post('/create_project', auth, checkProjectAccess(['owner']), projectController.createProject);
+
+    router.get('/get_all_project', auth, projectController.getAllProjectByUser);
+    router.get('/get_project', auth, checkProjectAccess(['owner']), projectController.getProjectByProjectId);   
+    router.post('/create_project', auth, projectController.createProject); 
     router.patch('/patch_project', auth, checkProjectAccess(['owner']), projectController.updateProject);
-    router.get('/get_all_project', auth, checkProjectAccess(['owner']), projectController.getAllProjectByUser);
-    router.get('/get_project', auth, checkProjectAccess(['owner']), projectController.getProjectByProjectId);
     router.delete('/delete_project', auth, checkProjectAccess(['owner']), projectController.deleteProject);
     
     router.post('/create_task', auth, checkProjectAccess(['owner']), taskController.createTask);

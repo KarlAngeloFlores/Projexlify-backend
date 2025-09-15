@@ -101,7 +101,7 @@ const projectService = {
 
     getProjectsByUser: async (userId) => {
         try {
-            
+            console.log('userid', userId)
             const projects = await projectModel.findProjectsByUserId(userId);
 
             return {
@@ -153,19 +153,9 @@ const projectService = {
 
             const oldStatus = project.status;
             const newStatus = 'deleted';
-            const tasksRemark = 'Project and task is deleted';
 
             await projectModel.updateProjectStatus(connection, newStatus, projectId);
             await projectModel.insertProjectLogs(connection, projectId, oldStatus, newStatus, remark, userId);
-
-
-            const tasks = await taskModel.findTasksByProjectId(connection, projectId);
-
-            await taskModel.updateTaskStatusByProjectId(connection, newStatus, projectId);
-
-            for(const task of tasks) {
-                await taskModel.insertTaskLogs(connection, projectId, task.id, task.status, newStatus, tasksRemark, userId);
-            };
 
             await connection.commit();
 

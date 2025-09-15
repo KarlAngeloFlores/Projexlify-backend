@@ -63,8 +63,14 @@ EMAIL_PASS=your_smtp_password_or_app_password
 JWT_SECRET=your_jwt_secret
 ```
 
-## 📌 API Endpoints  
+### 4. Run development server
+#### Type this on terminal on frontend directory  
+```
+npm run dev
+```
 
+
+## 📌 API Endpoints  
 ### 🔐 Authentication
 ### Example 
 > http://localhost:5000/auth/login
@@ -87,8 +93,8 @@ JWT_SECRET=your_jwt_secret
 
 | Method | Endpoint                      | Description               | Authentication Required | Authorization (Project Access) | Params/Body/Query |
 |--------|-------------------------------|---------------------------|----------------|--------------------------------|-------------------|
-| GET    | `/api/project/get_all_project` | Get all projects by user  | ✅  | Owner (only their own projects) | None |
-| GET    | `/api/project/get__project` | Get one project  | ✅  | Owner (only their own projects) | **Query:** `{ projectId }` |
+| GET    | `/api/project/get_all_project` | Get all projects by user  | ✅  | Any logged-in user | None |
+| GET    | `/api/project/get_project` | Get one project  | ✅  | Owner (only their own projects) | **Query:** `{ projectId }` |
 | POST   | `/api/project/create_project`                 | Create new project        | ✅ | Any logged-in user | **Body:** `{ name, description }` |
 | PATCH    | `/api/project/patch_project`             | Update Project with remark or none       | ✅  | Owner | **Body:** `{ projectId, name, description, newStatus, remark }` | 
 | DELETE | `/api/project/delete_project`             | Soft Delete project            | ✅             | Owner | **Body** `{ projectId, remark }` |

@@ -39,6 +39,7 @@ const projectController = {
     },
 
     getProjectByProjectId: async (req, res) => {
+        
         try {
             
             const { projectId } = req.query;
@@ -55,7 +56,7 @@ const projectController = {
 
     getAllProjectByUser: async (req, res) => {
         try {
-
+            logInfo(req.user)
             const userId = req.user.id;
             const data = await projectService.getProjectsByUser(userId);
             logSuccess(data.message);
