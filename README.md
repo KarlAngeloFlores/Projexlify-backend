@@ -37,18 +37,111 @@ The frontend consumes these APIs to manage projects and tasks effectively.
 
 ```
 npm install
-
-express
-cli-color
-bcrypt
-cookie-parser
-cors
-dotenv
-jsonwebtoken
-mysql2
-nodemailer
 ```
-### 3. Configure a .file in the project root
+
+### 3. Open MySQL Client
+### MySQL TABLES
+## Execute all of this on your MySQL Platform
+```
+-- =====================
+-- USERS TABLE
+-- =====================
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    username VARCHAR(100) UNIQUE, -- optional public identifier
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+-- =====================
+-- PROJECTS TABLE
+-- =====================
+CREATE TABLE projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    status ENUM('planned','active','completed','deleted') NOT NULL DEFAULT 'planned',
+    user_id INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+-- =====================
+-- TASKS TABLE
+-- =====================
+CREATE TABLE tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    status ENUM('todo','in_progress','done','deleted') NOT NULL DEFAULT 'todo',
+    position INT NOT NULL DEFAULT 0, 
+    contents TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+-- =====================
+-- TASK LOGS TABLE
+-- =====================
+
+CREATE TABLE task_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    task_id INT NOT NULL,
+    project_id INT NULL,
+    old_status ENUM('todo','in_progress','done','deleted'),
+    new_status ENUM('todo','in_progress','done','deleted'),
+    remark TEXT,
+    updated_by INT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
+);
+
+-- =====================
+-- PROJECT LOGS TABLE
+-- =====================
+CREATE TABLE project_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    old_status ENUM('planned','active','completed','deleted'),
+    new_status ENUM('planned','active','completed','deleted'),
+    remark TEXT,
+    updated_by INT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- =====================
+-- PROJECTS ACCESS TABLE
+-- =====================
+CREATE TABLE projects_access (
+    user_id INT NOT NULL,
+    project_id INT NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'read',  -- flexible role storage
+    PRIMARY KEY (user_id, project_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+-- =====================
+-- VERIFICATION CODE TABLE
+-- =====================
+CREATE TABLE verification_codes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    email VARCHAR(255) NULL,
+    code_hash VARCHAR(255) NOT NULL,
+    purpose ENUM('account_verification', 'password_reset') NOT NULL,
+    expires_at DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+```
+
+### 4. Configure a .file in the project root
 #### Create a **.env** file in the project root:
 ```
 PORT=5000
@@ -63,7 +156,7 @@ EMAIL_PASS=your_smtp_password_or_app_password
 JWT_SECRET=your_jwt_secret
 ```
 
-### 4. Run development server
+### 5. Run development server
 #### Type this on terminal on frontend directory  
 ```
 npm run dev
@@ -132,6 +225,9 @@ DELETE | `/api/project/delete_task`           | Soft delete task               |
 | POST    | `/api/access/get_tasks_log`| Give project access to chosen users **(write, read)** | ✅ | None  | **Body:** `{ email, projectId, role }` |
 | PATCH    | `/api/access/patch_access`| Change project access of the chosen user **(write, read)** | ✅ | None | **Body:** `{ userId, projectId, role }` |
 | DELETE    | `/api/access/patch_access`| Remove all access of the chosen user | ✅ | None  | **Body:** `{ userId, projectId }` |
+
+
+
 
 ## Incomplete functionalities (other scalable features that can be added with the project)
 ### Real-time collaboration within a project
