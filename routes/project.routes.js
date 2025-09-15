@@ -7,17 +7,17 @@ const checkProjectAccess = require('../middlewares/checkProjectAccess.middleware
 
 const router = express.Router();
 
-    router.post('/create_project', auth, projectController.createProject);
-    router.patch('/patch_project', auth, projectController.updateProject);
-    router.get('/get_all_project', auth, projectController.getAllProjectByUser);
-    router.get('/get_project', auth, checkProjectAccess(['owner', 'write', 'read']), projectController.getProjectByProjectId);
+    router.post('/create_project', auth, checkProjectAccess(['owner']), projectController.createProject);
+    router.patch('/patch_project', auth, checkProjectAccess(['owner']), projectController.updateProject);
+    router.get('/get_all_project', auth, checkProjectAccess(['owner']), projectController.getAllProjectByUser);
+    router.get('/get_project', auth, checkProjectAccess(['owner']), projectController.getProjectByProjectId);
     router.delete('/delete_project', auth, checkProjectAccess(['owner']), projectController.deleteProject);
     
-    router.post('/create_task', auth, checkProjectAccess(['owner', 'write']), taskController.createTask);
-    router.get('/get_all_task', auth, checkProjectAccess(['owner', 'write', 'read']), taskController.getTasksByProject);
+    router.post('/create_task', auth, checkProjectAccess(['owner']), taskController.createTask);
+    router.get('/get_all_task', auth, checkProjectAccess(['owner']), taskController.getTasksByProject);
     router.get('/get_task', auth, taskController.getTaskByTaskId);
-    router.delete('/delete_task', auth, checkProjectAccess(['owner', 'write']), taskController.deleteTask);
-    router.patch('/patch_task', auth, checkProjectAccess(['owner', 'write']), taskController.updateTask);
+    router.delete('/delete_task', auth, checkProjectAccess(['owner']), taskController.deleteTask);
+    router.patch('/patch_task', auth, checkProjectAccess(['owner']), taskController.updateTask);
 
     router.patch('/update_reorder', auth, taskController.updateTaskStatus);
 
