@@ -16,12 +16,12 @@ The frontend consumes these APIs to manage projects and tasks effectively.
 - **nodemailer** – Email notifications
 
 ## Features
-- **User authentication** (register, login, JWT-based auth)
-- **Project management** (create, view, update, delete projects)
-- **Task management** (add, update, delete tasks)
-- **Route protection** with JWT & cookies
-- **Secure password** storage with bcrypt
-- **MySQL integration** using mysql2
+- **User authentication** - (register, login, JWT-based auth)
+- **Project management** - (create, view, update, delete projects)
+- **Task management** - (add, update, delete tasks)
+- **Route protection** - with JWT & cookies
+- **Secure password** - storage with bcrypt
+- **MySQL integration** - using mysql2
 
 ## Installation & Setup
 > **Important:** For the backend to be fully functional, you must **run the frontend after running this.** 
@@ -171,6 +171,8 @@ npm run dev
 | Method | Endpoint         | Description                | Authentication Required | Params/Body/Query | 
 |--------|------------------|----------------------------|---------------|-------------|
 | POST   | `/api/auth/login`    | Login & get JWT token    | ❌ | **Body:** `{ email, password }` |
+| GET    | `/api/auth/me`       | To check if the user is authenticated | ✅ | None |
+| GET    | `/api/auth/get_member`       | Get specific user info  | ✅ | None |
 | POST   | `/api/auth/register` | Pre-register new user        | ❌ | **Body:** `{ username, email, password }` |
 | POST    | `/api/auth/verify`       | verify and register new user | ❌ | **Body:** `{ token, password, code }` | 
 | POST   | `/api/auth/logout` | Clear accessToken on Http Cookie         | ✅ | None |
@@ -180,6 +182,7 @@ npm run dev
 | PATCH   | `/api/auth/confirm_password`    | Update the user's password to new password    | ❌ | **Body:** `{ email, newPassword, confirmPassword }` |
 | POST    | `/api/auth/resend_code`       | Reusable for sending verification code for registration and forgot password | ❌ | **Body:** `{ email, purpose }` |
 
+
 ### 📂 Projects
 ### Example 
 > http://localhost:5000/project/get_all_project
@@ -187,10 +190,10 @@ npm run dev
 | Method | Endpoint                      | Description               | Authentication Required | Authorization (Project Access) | Params/Body/Query |
 |--------|-------------------------------|---------------------------|----------------|--------------------------------|-------------------|
 | GET    | `/api/project/get_all_project` | Get all projects by user  | ✅  | Any logged-in user | None |
-| GET    | `/api/project/get_project` | Get one project  | ✅  | Owner (only their own projects) | **Query:** `{ projectId }` |
+| GET    | `/api/project/get_project` | Get one project  | ✅  | owner (only their own projects) | **Query:** `{ projectId }` |
 | POST   | `/api/project/create_project`                 | Create new project        | ✅ | Any logged-in user | **Body:** `{ name, description }` |
-| PATCH    | `/api/project/patch_project`             | Update Project with remark or none       | ✅  | Owner | **Body:** `{ projectId, name, description, newStatus, remark }` | 
-| DELETE | `/api/project/delete_project`             | Soft Delete project            | ✅             | Owner | **Body** `{ projectId, remark }` |
+| PATCH    | `/api/project/patch_project`             | Update Project with remark or none       | ✅  | owner | **Body:** `{ projectId, name, description, newStatus, remark }` | 
+| DELETE | `/api/project/delete_project`             | Soft Delete project            | ✅             | owner | **Body** `{ projectId, remark }` |
 
 
 ### ✅ Tasks
@@ -212,8 +215,8 @@ DELETE | `/api/project/delete_task`           | Soft delete task               |
 
 | Method | Endpoint                   | Description               | Auth Required | Authorization (project access) | Params/Body/Query |
 |--------|----------------------------|---------------------------|---------------|--------------------------------| ------------------|
-| GET    | `/api/log/get_projects_log`| Get all the logs of a project itself (not task) | ✅ | Owner  | **Body:** `{ projectId }` |
-| GET    | `/api/log/get_tasks_log`| Get all the logs of a project itself (not task) | ✅ | Owner  | **Body:** `{ projectId }` |
+| GET    | `/api/log/get_projects_log`| Get all the logs of a project itself (not task) | ✅ | owner  | **Body:** `{ projectId }` |
+| GET    | `/api/log/get_tasks_log`| Get all the logs of all tasks of a specific project | ✅ | owner  | **Body:** `{ projectId }` |
 
 ### 🔑 Access Emoji (Incomplete scalable functionality)
 ### Example 
