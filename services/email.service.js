@@ -112,8 +112,7 @@ const transporter = nodemailer.createTransport({
 
 const sendMail = async (to, subject, html) => {
     try {
-        transporter.sendMail({ from: process.env.EMAIL, to, subject, html });
-        // not awaiting transporter.sendMail fully makes it faster (async fire-and-forget)
+        await transporter.sendMail({ from: process.env.EMAIL, to, subject, html });
     } catch (err) {
         console.error('Email send error:', err);
     }
