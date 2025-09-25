@@ -20,7 +20,7 @@ const accessTokenCookieDev = () => ({
 });
 
 const accessTokenCookie = () => {
-  const isProd = process.env.NODE_ENV === 'production';
+  const isProd = process.env.NODE_ENV === 'Production';
   return isProd ? accessTokenCookieProd() : accessTokenCookieDev();
 };
 
