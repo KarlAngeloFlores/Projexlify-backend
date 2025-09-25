@@ -285,7 +285,7 @@ const authService = {
         changePassword: async (userId, oldPassword, newPassword) => {   
             try {
             
-                const user = await User.findOne({ where: { id: userId }, attributes: [] });
+                const user = await User.findOne({ where: { id: userId } });
                 if(!user) {
                     throwError('User not found', 404, true);
                 };
