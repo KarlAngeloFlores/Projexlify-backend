@@ -19,9 +19,13 @@ const accessTokenCookieDev = () => ({
   path: '/'
 });
 
+// const accessTokenCookie = () => {
+//   const isProd = process.env.NODE_ENV === 'Production';
+//   return isProd ? accessTokenCookieProd() : accessTokenCookieDev();
+// };
+
 const accessTokenCookie = () => {
-  const isProd = process.env.NODE_ENV === 'Production';
-  return isProd ? accessTokenCookieProd() : accessTokenCookieDev();
+  return accessTokenCookieProd();
 };
 
 module.exports = {
