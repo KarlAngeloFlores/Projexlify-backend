@@ -1,13 +1,15 @@
 const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp.sendgrid.net',
-    port: 587,
-    auth: {
-        user: 'apikey', // literally the word "apikey"
-        pass: process.env.SENDGRID_API_KEY
-    }
-});
+// const transporter = nodemailer.createTransport({
+//     host: 'smtp.sendgrid.net',
+//     port: 587,
+//     auth: {
+//         user: 'apikey', // literally the word "apikey"
+//         pass: process.env.SENDGRID_API_KEY
+//     }
+// });
 
 // const transporter = nodemailer.createTransport({
 //     host: 'smtp.gmail.com',
@@ -21,7 +23,7 @@ const transporter = nodemailer.createTransport({
 const emailService = {
 sendVerificationCode: async (email, verificationCode, subject) => {
     try {
-        await transporter.sendMail({
+        await sgMail.send({
             from: process.env.EMAIL,
             to: email,
             subject: subject,
@@ -67,7 +69,7 @@ sendVerificationCode: async (email, verificationCode, subject) => {
     sendNotification: async (email, subject, message) => {
         try {
 
-        await transporter.sendMail({
+        await sgMail.send({
         from: process.env.EMAIL,
         to: email,
         subject: subject,
