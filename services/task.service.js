@@ -1,16 +1,18 @@
-const db = require('../config/db');
-const projectModel = require('../models/project.model');
-const taskModel = require('../models/task.model');
+const { Op, fn, col } = require('sequelize');
+const sequelize = require('../config/db');
 const { logInfo } = require('../utils/logs.util');
 const { throwError } = require('../utils/util');
+const { Project, Task, TaskLog} = require('../models/associations')
+
 
 const taskService = {
-createTask: async (userId, projectId, name, status, contents) => {
-    let connection = await db.getConnection();
+    createTask: async (userId, projectId, name, status, contents) => {
+        const transaction = await sequelize.transaction();
 
-    try {
-        const project = await projectModel.findProjectByProjectId(connection, projectId);
-        
+        try {
+
+        const project = await Project.findOne({ where: { id: projectId, status: { [Op.ne]: "deleted" } }, transaction });
+
         if(!project) {
             throwError('Project not found', 404, true); // User-friendly
         }
@@ -19,52 +21,62 @@ createTask: async (userId, projectId, name, status, contents) => {
             throwError('Cannot create task in a deleted project', 400, true); // User-friendly
         }
 
-        const resultRow = await taskModel.findNextPos(connection, projectId, status);
-        console.log(resultRow.nextPos);
-        const nextPosition = resultRow.nextPos;
+        const resultRow = await Task.findOne({
+            where: {
+            project_id: projectId,
+            status: status,
+        },
+        attributes: [
+        [fn("COALESCE", fn("MAX", col("position")), -1), "maxPos"]
+    ],
+        raw: true,
+        }, {transaction});
 
-        await connection.beginTransaction();
+        const task = await Task.create({ 
+            project_id: projectId, 
+            name,
+            status: status,
+            position: resultRow.nextPos,
+            contents
+         }, { transaction });
 
-        const resultNewTask = await taskModel.insertNewTask(connection, projectId, name, status, nextPosition, contents);
-        const taskId = resultNewTask.insertId;
+         const oldStatus = null;
+         const remark = null;
 
-        const oldStatus = null;
-        const remark = null;
-        
-        await taskModel.insertTaskLogs(connection, taskId, projectId, oldStatus, status, remark, userId);
-        const dataTask = await taskModel.findTaskByTaskId(connection, taskId);
+         //add task log
+         await TaskLog.create({ 
+            task_id: task.id,
+            project_id: projectId,
+            old_status: oldStatus,
+            new_status: status,
+            remark,
+            updated_by: userId
+          }, { transaction })
 
-        await connection.commit();
+        await transaction.commit();
 
         return {
-            message: 'Task created successfully', 
-            task: dataTask
+            message: 'Task created successfully',
+            task
         }
+            
+        } catch (error) {
+            await transaction.rollback();
+            throw error;  
+        };
 
-    } catch (error) {
-        await connection.rollback();
-        
-        // If it's a database error or other technical error, mark as not user-friendly
-        if (!error.isUserFriendly) {
-            error.isUserFriendly = false;
-        }
-        
-        throw error;
-        
-    } finally {
-        connection.release();
-    }
-},
+    },
+
     getTasksByProject: async (projectId) => {
         try {
             
-            const project = await projectModel.findProjectByProjectId(db, projectId);
+            const project = await Project.findOne({ where: { id: projectId, status: { [Op.ne]: "deleted" } } });
 
             if(!project) {
                 throwError('Project not found', 404, true);
             };
 
-            const data = await taskModel.findTasksByProjectId(db, projectId);
+            const data = await Task.findAll({ where: { project_id: projectId, status: { [Op.ne]: "deleted" } }});
             
             return {
                 message: 'Tasks fetched successfully',
@@ -79,7 +91,7 @@ createTask: async (userId, projectId, name, status, contents) => {
     getTaskByTaskId: async (taskId) => {
         try {
             
-            const data = await taskModel.findTaskByTaskId(db, taskId);
+            const data = await Task.findOne({ where: { id: taskId } });
             
             if(!data) {
                 throwError('Task not found', 400, true);
@@ -96,116 +108,147 @@ createTask: async (userId, projectId, name, status, contents) => {
     },
 
     updateTask: async (projectId, taskId, name, contents, newStatus, userId, remark) => {
-        let connection = await db.getConnection();
+const transaction = await sequelize.transaction();
 
-        try {
-            
-            const project = await projectModel.findProjectByProjectId(connection, projectId);
+  try {
+    const project = await Project.findOne({
+      where: { id: projectId, status: { [Op.ne]: "deleted" } },
+      transaction,
+    });
 
-            if(!project) {
-                throwError('Project not found', 404, true);
-            };
+    if (!project) {
+      throwError("Project not found", 404, true);
+    }
 
-            const currentTask = await taskModel.findTaskByTaskId(connection, taskId);
-            logInfo(currentTask);
-            if (!currentTask) {
-                throwError('Task not found', 400, true);
-            }            
-            
-            const oldStatus = currentTask.status;
+    const currentTask = await Task.findOne({
+      where: { id: taskId, project_id: projectId, status: { [Op.ne]: "deleted" } },
+      transaction,
+    });
 
-            if (
-            currentTask.name === name &&
-            currentTask.contents === contents &&
-            currentTask.status === newStatus
-            ) {
-            throwError("No changes detected. Task not updated", 400, true);
-            }
+    if (!currentTask) {
+      throwError("Task not found", 404, true);
+    }
 
-            // if (oldStatus !== newStatus && (!remark || remark.trim() === "")) {
-            //     throwError('Remark is required when changing project status.', 400, true);
-            // };
+    const oldStatus = currentTask.status;
 
-            await connection.beginTransaction();
+    if (
+      currentTask.name === name &&
+      currentTask.contents === contents &&
+      currentTask.status === newStatus
+    ) {
+      throwError("No changes detected. Task not updated", 400, true);
+    }
 
-            // update task
-            await taskModel.updateTask(connection, taskId, name, contents, newStatus);
+    // Optional: Require remark if status changes
+    // if (oldStatus !== newStatus && (!remark || remark.trim() === "")) {
+    //   throwError("Remark is required when changing task status.", 400, true);
+    // }
 
-            const resultLog = await taskModel.insertTaskLogs(connection, taskId, projectId, oldStatus, newStatus, remark, userId);
+    await Task.update(
+      { name, contents, status: newStatus },
+      { where: { id: taskId }, transaction }
+    );
 
-            const logId = resultLog.insertId;
-            const updatedTask = await taskModel.findTaskByTaskId(connection, taskId);
-            const updatedLog = await taskModel.findUpdatedTaskLog(connection, logId);
+    const log = await TaskLog.create(
+      {
+        task_id: taskId,
+        project_id: projectId,
+        old_status: oldStatus,
+        new_status: newStatus,
+        remark,
+        updated_by: userId,
+      },
+      { transaction }
+    );
 
-            await connection.commit();
+    const updatedTask = await Task.findOne({
+      where: { id: taskId },
+      transaction,
+    });
 
-            return {
-                message: "Task updated successfully",
-                updated_task: updatedTask,
-                updated_log: updatedLog
-            };
+    await transaction.commit();
 
-        } catch (error) {
-            await connection.rollback();
+    return {
+      message: "Task updated successfully",
+      updated_task: updatedTask,
+      updated_log: log,
+    };
+  } catch (error) {
+    await transaction.rollback();
 
-            if (!error.isUserFriendly) {
-                error.isUserFriendly = false;
-            }
+    if (!error.isUserFriendly) {
+      error.isUserFriendly = false;
+    }
 
-            throw error;
-        } finally {
-            connection.release();
-        }
+    throw error;
+  }
     },
+
     deleteTask: async (userId, taskId, projectId, remark) => {
-        let connection = await db.getConnection();
-        try {
-            await connection.beginTransaction();
+          const transaction = await sequelize.transaction();
 
-            const project = await projectModel.findProjectByProjectId(connection, projectId);
+  try {
+    const project = await Project.findOne({
+      where: { id: projectId, status: { [Op.ne]: "deleted" } },
+      transaction,
+    });
 
-            if (!project) {
-                throwError('Project not found', 404, true);
-            }
+    if (!project) {
+      throwError("Project not found", 404, true);
+    }
 
-            const task = await taskModel.findTaskByTaskId(connection, taskId);
-            
-            if(!task) {
-                throwError('Task not found', 404, true)
-            };
+    const task = await Task.findOne({
+      where: { id: taskId, project_id: projectId },
+      transaction,
+    });
 
-            if(task.status === 'deleted') {
-                throwError('Task is already deleted', 404, true)
-            };
+    if (!task) {
+      throwError("Task not found", 404, true);
+    }
 
-            if(!remark) {
-                throwError('Remark is required upon deleting a task', 400, true);
-            };
+    if (task.status === "deleted") {
+      throwError("Task is already deleted", 400, true);
+    }
 
-            const oldStatus = task.status;
-            const newStatus = 'deleted';
+    if (!remark || remark.trim() === "") {
+      throwError("Remark is required upon deleting a task", 400, true);
+    }
 
-            await taskModel.updateTaskStatus(connection, taskId, newStatus);
+    const oldStatus = task.status;
+    const newStatus = "deleted";
 
-            await taskModel.insertTaskLogs(connection, taskId, projectId, oldStatus, newStatus, remark, userId);
-            await connection.commit();
+    await Task.update(
+      { status: newStatus },
+      { where: { id: taskId }, transaction }
+    );
 
-            return {
-                message: 'Task deleted successfully',
-                task_id: taskId
-            }
+    await TaskLog.create(
+      {
+        task_id: taskId,
+        project_id: projectId,
+        old_status: oldStatus,
+        new_status: newStatus,
+        remark,
+        updated_by: userId,
+      },
+      { transaction }
+    );
 
-        } catch (error) {
-            await connection.rollback();
+    await transaction.commit();
 
-        if (!error.isUserFriendly) {
-            error.isUserFriendly = false;
-        }
+    return {
+      message: "Task deleted successfully",
+      task_id: taskId,
+    };
+  } catch (error) {
+    await transaction.rollback();
 
-            throw error;
-        } finally {
-            connection.release();
-        }
+    if (!error.isUserFriendly) {
+      error.isUserFriendly = false;
+    }
+
+    throw error;
+  }
     },
 
 
@@ -215,39 +258,49 @@ createTask: async (userId, projectId, name, status, contents) => {
 
 updateTaskStatus: async (tasks, taskId, newStatus, userId, projectId) => {
 
-let connection = await db.getConnection();
+  const transaction = await sequelize.transaction();
 
   try {
     logInfo('PROJECTID: ', projectId);
     // find if it exists
-    const task = await taskModel.findTaskByTaskId(connection, taskId);
-    if (!task) { throwError("Task not found", 400, true) };
+    const task = await Task.findOne({ where: 
+        { id: taskId, status: { [Op.ne]: "deleted" } } });
 
+    if (!task) { throwError("Task not found", 400, true) };
     const oldStatus = task.status;
 
     if(oldStatus === newStatus) {
-        // throwError('Nothing changed', 400, true);
-        return;
+        return { message: "No changes made through DND" };
     };
 
     const remark = "moved thru dnd";
-    
-    await connection.beginTransaction();
 
-    for(const task of tasks) {
-        await taskModel.updateTaskStatusAndPos(connection, task.id, task.status, task.position);
+    for (const t of tasks) {
+      await Task.update(
+        { status: t.status, position: t.position },
+        { where: { id: t.id }, transaction }
+      );
     }
 
-    await taskModel.insertTaskLogs(connection, taskId, projectId, oldStatus, newStatus, remark, userId);
+    await TaskLog.create(
+      {
+        task_id: taskId,
+        project_id: projectId,
+        old_status: oldStatus,
+        new_status: newStatus,
+        remark,
+        updated_by: userId,
+      },
+      { transaction }
+    );
 
-    await connection.commit();
+    await transaction.commit();
 
-    return { success: true };
+    return { message: "Changed task status through DND" };
+
   } catch (error) {
-    await connection.rollback();
+    await transaction.rollback();
     throw error;
-  } finally {
-    connection.release();
   }
 }
 

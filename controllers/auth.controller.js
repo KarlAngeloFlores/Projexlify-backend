@@ -1,35 +1,20 @@
 const { sendError, sendSuccess, getFriendlyErrorMessage } = require('../utils/util');
 const { logInfo, logSuccess, logError } = require('../utils/logs.util');
-const { accessTokenCookie, refreshTokenCookie } = require('../utils/cookies.util');
+const { accessTokenCookie } = require('../utils/cookies.util');
 const authService = require('../services/auth.service');
+const userService = require('../services/user.service');
 
 const authController = {
     login: async (req, res) => {
         try {
             
             const { email, password } = req.body;
-            const {accessToken} = await authService.login(email, password);
+            const { accessToken, role } = await authService.login(email, password);
 
             res.cookie('accessToken', accessToken, accessTokenCookie());
             logSuccess('Logged in successfully');
-            sendSuccess(res, 200, 'Logged in successfully');
+            sendSuccess(res, 200, { message: 'Logged in successfully', role });
             
-        } catch (error) {
-            logError(error.message);
-            const status = error.statusCode || 500;
-            sendError(res, status, getFriendlyErrorMessage(error));
-        }
-    },
-
-    getUser: async (req, res) => {
-        try {
-            
-            const userId = req.user.id;
-            
-            const result = await authService.getUser(userId);
-            logSuccess(result.message);
-            sendSuccess(res, 200, result);
-
         } catch (error) {
             logError(error.message);
             const status = error.statusCode || 500;

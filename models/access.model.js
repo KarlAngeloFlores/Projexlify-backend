@@ -1,52 +1,56 @@
-const db = require('../config/db');
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db");
+const User = require("./user.model");
+const Project = require("./project.model");
 
-const accessModel = {
-    insertProjectAccess: async (connection, userId, projectId, role) => {
-        const query = `INSERT INTO projects_access (user_id, project_id, role) VALUES (?, ?, ?);`;
-        const [result] = await connection.query(query, [userId, projectId, role]);
-        return result;
+const ProjectAccess = sequelize.define(
+  "ProjectAccess",
+  {
+    user_id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      references: {
+        model: User,
+        key: "id"
+      },
+      onDelete: "CASCADE"
     },
-
-    findProjectAccess: async (userId, projectId) => {
-        const query = `SELECT * FROM projects_access WHERE user_id = ? AND project_id = ?`;
-        const [rows] = await db.query(query, [userId, projectId]);
-        return rows[0];
+    project_id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      references: {
+        model: Project,
+        key: "id"
+      },
+      onDelete: "CASCADE"
     },
-
-    updateProjectAccess: async (userId, projectId, newRole) => {
-        const query = `
-            UPDATE projects_access 
-            SET role = ?
-            WHERE user_id = ? AND project_id = ?
-        `;
-        const [result] = await db.query(query, [newRole, userId, projectId]);
-        return result;
+    role: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      defaultValue: "read",
     },
+  },
+  {
+    tableName: "projects_access",
+    timestamps: false, // your table doesn’t have createdAt/updatedAt
+  }
+);
 
-    deleteProjectAccess: async (userId, projectId) => {
-        const query = `
-            DELETE FROM projects_access 
-            WHERE user_id = ? AND project_id = ?
-        `;
-        const [result] = await db.query(query, [userId, projectId]);
-        return result;
-    },
-    findSharedProject: async (userId) => {
-        const query = `SELECT 
-        pa.project_id,
-        pa.role,
-        p.name AS project_name,
-        p.description,
-        p.created_at,
-        p.updated_at
-        FROM projects_access pa
-        JOIN projects p ON pa.project_id = p.id
-        WHERE pa.user_id = ? AND pa.role != 'owner'`
+module.exports = ProjectAccess;
 
-        const [rows] = await db.query(query, [userId]);
-        return rows; 
-    }
-    
-};
 
-module.exports = accessModel;
+//     findSharedProject: async (userId) => {
+//         const query = `SELECT 
+//         pa.project_id,
+//         pa.role,
+//         p.name AS project_name,
+//         p.description,
+//         p.created_at,
+//         p.updated_at
+//         FROM projects_access pa
+//         JOIN projects p ON pa.project_id = p.id
+//         WHERE pa.user_id = ? AND pa.role != 'owner'`
+
+//         const [rows] = await db.query(query, [userId]);
+//         return rows; 
+//     }

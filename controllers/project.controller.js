@@ -86,7 +86,20 @@ const projectController = {
             const statusCode = error.statusCode || 500;
             sendError(res, statusCode, getFriendlyErrorMessage(error));
         }
-    }
+    },
+
+    getAllProjects: async (req, res) => {
+        try {
+
+            const result = await projectService.getAllProjects();
+            logSuccess(result.message);
+            sendSuccess(res, 200, result);
+            
+        } catch (error) {
+            logError(error);
+            sendError(res, 500, getFriendlyErrorMessage(error));
+        }
+    },
 }
 
 module.exports = projectController; 

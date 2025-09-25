@@ -1,6 +1,7 @@
 const express = require('express');
 const authController = require('../controllers/auth.controller');
 const auth = require('../middlewares/auth.middleware');
+const userController = require('../controllers/user.controller');
 
 const router = express.Router();
 
@@ -16,5 +17,5 @@ router.patch('/confirm_password', authController.confirmNewPassword);
 router.post('/resend_code', authController.resendVerificationCode);
 
 router.get('/me', auth, authController.me);
-router.get('/get_member', auth, authController.getUser);
+router.get('/get_member', auth, userController.getUser);
 module.exports = router;

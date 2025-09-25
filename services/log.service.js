@@ -1,9 +1,7 @@
-const logModel = require('../models/log.model');
-const projectModel = require('../models/project.model');
-const taskModel = require('../models/task.model');
-const { throwError } = require('../utils/util');
-const db = require('../config/db');
+const sequelize = require('../config/db');
+const { User, ProjectLog, TaskLog, Task } = require('../models/associations');
 
+const { throwError } = require('../utils/util');
 const logService = {
     
     /**
@@ -12,22 +10,23 @@ const logService = {
      * */
 
     createProjectChangeLog: async (projectId, oldStatus = null, newStatus, remark, userId) => {
-        let connection = await db.getConnection();
-        try {
-            
-            await connection.beginTransaction();
+        const transaction = await sequelize.transaction();
+        try {          
+            await ProjectLog.create({
+                project_id: projectId,
+                old_status: oldStatus, 
+                new_status: newStatus, 
+                remark,
+                user_id: userId
+            }, { transaction });
 
-            await projectModel.insertProjectLogs(connection, projectId, oldStatus, newStatus, remark, userId);
-
-            await connection.commit();
+            await transaction.commit();
 
             return { message: "Project log created successfully" };
 
         } catch (error) {
-            await connection.rollback();
+            await transaction.rollback();
             throw error;
-        } finally {
-            connection.release();
         }
     },
     
@@ -36,46 +35,93 @@ const logService = {
      * @protected
      * */
     createTaskChangeLog: async (taskId, oldStatus = null, newStatus, remark, userId) => {
-        let connection = await db.getConnection();
+        const transaction = await sequelize.transaction();
         try {
             
-            await connection.beginTransaction();
+            await Task.create({ 
+                task_id: taskId,
+                old_status: oldStatus,
+                new_status: newStatus,
+                remark,
+                user_id: userId
+             }, { transaction });
 
-            await taskModel.insertTaskLogs(connection, taskId, oldStatus, newStatus, remark, userId);
-
-            await connection.commit();
+            await transaction.commit();
 
             return { message: "Task log created successfully" };
 
         } catch (error) {
-            await connection.rollback();
+            await transaction.rollback();
             throw error;
-        } finally {
-            connection.release();
-        }
+        } 
     }, 
     
-    getProjectHistoryByUser: async (projectId, userId) => {
+    getProjectHistory: async (projectId) => {
         try {
 
-            const logs = await logModel.findProjectLogsByUser(projectId, userId);
+            const logs = await ProjectLog.findAll({
+                attributes: ['id', 'old_status', 'new_status', 'remark', 'created_at'],
+                include: [
+                    {
+                        model: User,
+                        attributes: ['username']
+                    },
+                ],
+                where: { project_id: projectId },
+                order: [['created_at', 'ASC']]
+            });
+
+            const cleanLogs = logs.map(log => ({
+                id: log.id,
+                old_status: log.old_status,
+                new_status: log.new_status,
+                remark: log.remark,
+                created_at: log.created_at,
+                updated_by: log.User?.username || null
+            }));
 
             return {
                 message: 'Project history fetched successfully',
-                data: logs || []
+                data: cleanLogs || []
             };
 
         } catch (error) {
             throw error;
         }
     },
+
     getTasksHistoryByProject: async (projectId) => {
         try {
-            const logs = await logModel.findTasksLogsByProject(projectId);
+            const logs = await TaskLog.findAll({
+                attributes: ['id', 'task_id', 'old_status', 'new_status', 'remark', 'created_at'],
+                include: [
+                    {
+                        model: Task,
+                        attributes: ['name'],
+                    },
+                    {
+                        model: User,
+                        attributes: ['username']
+                    }
+                ],
+                where: { project_id: projectId },
+                order: [['created_at', 'ASC']]
+            });
+
+            const cleanLogs = logs.map(log => ({
+                id: log.id, 
+                task_id: log.task_id,
+                old_status: log.old_status, 
+                new_status: log.new_status,
+                remark: log.remark,
+                created_at: log.created_at,
+                updated_by: log.User?.username || null,
+                task_name: log.Task?.name || null
+            }))
 
             return {
                 message: 'Tasks history fetched successfully',
-                data: logs || []
+                data: cleanLogs || []
             };
 
         } catch (error) {

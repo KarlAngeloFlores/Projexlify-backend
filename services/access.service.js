@@ -1,9 +1,5 @@
 const db = require('../config/db');
-
-const accessModel = require('../models/access.model');
-const projectModel = require('../models/project.model');
-const userModel = require('../models/user.model');
-
+const { User, Project, ProjectAccess } = require('../models/associations');
 const { throwError } = require('../utils/util');
 
 const accessService = {
@@ -11,13 +7,13 @@ const accessService = {
     giveAccess: async (email, projectId, role) => {
         try {
   
-            const user = await userModel.findUserByEmail(email);
+            const user = await User.findOne({ where: { email }, attributes: {exclude: ['password']} });
             
             if(!user) {
                 throwError('User not found', 404, true);
             };
             
-            const project = await projectModel.findProjectByProjectId(db, projectId);
+            const project = await Project.findOne({ where: { project_id: projectId } });
 
             if(!project) {
                 throwError('Project not found', 404, true);
@@ -25,7 +21,7 @@ const accessService = {
 
             const userId = user.id;
 
-            const access = await accessModel.findProjectAccess(userId, projectId);
+            const access = await ProjectAccess.findOne({ where: { user_id: userId, project_id: projectId } });
             
             //prevent owner from adding themselves
             if (access && access.role === "owner" && role === "owner") {
@@ -39,7 +35,7 @@ const accessService = {
             }
 
             if(!access) {
-                await accessModel.insertProjectAccess(db, userId, projectId, role);
+                await ProjectAccess.create({ user_id: userId, project_id: projectId, role });
             } else {
                 throwError('User already has access to this project', 400, true);
             };
@@ -55,7 +51,7 @@ const accessService = {
 
     updateAccess: async (userId, projectId, newRole) => {
         try {
-            const access = await accessModel.findProjectAccess(userId, projectId);
+            const access = await ProjectAccess.findOne({ where: { user_id: userId, project_id: projectId } }); //userId, projectId
 
             if (!access) {
                 throwError('Access not found', 404, true);
@@ -74,7 +70,7 @@ const accessService = {
                 throwError('Invalid role', 400, true);
             }
 
-            await accessModel.updateProjectAccess(userId, projectId, newRole);
+            await ProjectAccess.update({ role }, { where: { project_id: projectId, user_id: userId } }); //userId, projectId, newRole
 
             return { message: 'Access updated successfully' };
         } catch (error) {
@@ -84,7 +80,7 @@ const accessService = {
     
     removeAccess: async (userId, projectId) => {
         try {
-            const access = await accessModel.findProjectAccess(userId, projectId);
+            const access = await ProjectAccess.findOne({ where: { user_id: userId, project_id: projectId } }); //userId, projectId
 
             if (!access) {
                 throwError('Access not found', 404, true);
@@ -94,7 +90,7 @@ const accessService = {
                 throwError('Cannot remove the project owner', 403, true);
             }
 
-            await accessModel.deleteProjectAccess(userId, projectId);
+            await ProjectAccess.destroy({ where: { user_id: userId, project_id: projectId } }); //userId, projectId
 
             return { message: 'Access removed successfully' };
         } catch (error) {
@@ -102,20 +98,20 @@ const accessService = {
         }
     },
 
-    getSharedProjects: async (userId) => {
-        try {
+    // getSharedProjects: async (userId) => {
+    //     try {
             
-            const data = await accessModel.findSharedProject(userId);
+    //         const data = await accessModel.findSharedProject(userId);
 
-            return {
-                message: 'Fetched shared project successfully',
-                data: data || []
-            }
+    //         return {
+    //             message: 'Fetched shared project successfully',
+    //             data: data || []
+    //         }
 
-        } catch (error) {
-            throw error;
-        }
-    }
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
 
 };
 

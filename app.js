@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const db = require('./config/db');
+const sequelize = require('./config/db');
 const app = express();
 
 //to add rate limiter
@@ -29,5 +29,8 @@ app.use('/log', logRoutes);
 
 const accessRoutes = require('./routes/access.routes');
 app.use('/access', accessRoutes);
+
+const adminRoutes = require('./routes/admin.routes');
+app.use('/admin', adminRoutes);
 
 module.exports = app;

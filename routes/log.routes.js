@@ -15,7 +15,7 @@ const router = express.Router();
  * router.post('/create_task_log', auth, logController.createTaskChangeLog);
  */
 
-router.get('/get_projects_log', auth, checkProjectAccess(['owner']), logController.getProjectHistoryByUser);
+router.get('/get_projects_log', auth, checkProjectAccess(['owner']), logController.getProjectHistory);
 router.get('/get_tasks_log', auth, checkProjectAccess(['owner']), logController.getTasksHistoryByProject);
 
 module.exports = router;

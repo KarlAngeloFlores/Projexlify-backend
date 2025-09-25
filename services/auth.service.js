@@ -1,4 +1,6 @@
-const userModel = require('../models/user.model');
+//models
+const { User, VerificationCode } = require('../models/associations');
+
 const bcrypt = require('bcrypt');
 const { generateToken, generateVerificationCode, verifyToken, throwError } = require('../utils/util');
 const emailService = require('./email.service');
@@ -8,7 +10,7 @@ const authService = {
     
     login: async (email, password) => {
         try {
-            const user = await userModel.findUserByEmail(email); 
+            const user = await User.findOne({ where: { email } }); 
             
             if(!user) {
                 throwError('User not found', 404, true);
@@ -21,9 +23,9 @@ const authService = {
 
             logInfo(user.email);
             
-            const accessToken = generateToken({id: user.id, email: user.email}, '1h' );
+            const accessToken = generateToken({id: user.id, email: user.email, role: user.role}, '1h' );
 
-            return { accessToken };
+            return { accessToken, role: user.role };
 
         } catch (error) {
             throw error;
@@ -33,7 +35,10 @@ const authService = {
         getUser: async (id) => {
             try {
                 
-                const user = await userModel.findUserById(id);
+                const user = await User.findOne({ 
+                    where: { id },
+                    attributes: { exclude: ['password'] }  
+                });
                 
                 if(!user) {
                     throwError('User not found', 404, true);
@@ -48,59 +53,58 @@ const authService = {
                 throw error;
             }
         },
-    
+
         register: async (email, username) => {
             try {
                 
-                const existingUser = await userModel.findUserByEmail(email);
-                const existingUsername = await userModel.findUsername(username);
-
-                if(!email || !username) {
-                    throwError('Missing credentials', 400, true);
-                };
+                const existingUser = await User.findOne({ where: { email }, attributes: ['email'] });
+                const existingUsername = await User.findOne({ where: { username }, attributes: ['username'] });
 
                 if(existingUser) {
                     throwError('User already exists', 409, true);
-                };
+                }
 
                 if(existingUsername) {
                     throwError('Username is already used', 409, true);
-                };
+                }
 
-                const token = generateToken({email, username}, '15m');
+                const token = generateToken({email, username}, "15m");
 
                 const verificationCode = generateVerificationCode();
                 const hashedCode = await bcrypt.hash(verificationCode.toString(), 10);
                 const expires_at = new Date(Date.now() + 15 * 60 * 1000);
                 const purpose = 'account_verification';
-                
-                //delete old code -> insert new code -> send code email
-                await userModel.deleteVerificationCodeByEmail(email, 'account_verification');
-                await userModel.insertVerificationCodeByEmail(email, hashedCode, purpose, expires_at);
-                
-                const subject = 'Registration verification code - Project Management System';
-                const resultEmail = await emailService.sendVerificationCode(email, verificationCode, subject);
+
+                //delete old codes and insert new one
+
+                await VerificationCode.destroy({ 
+                    where: { email, purpose }
+                });
+
+                await VerificationCode.create({ email, code_hash: hashedCode, purpose, expires_at });
+
+                //send email
+                // send email
+                const subject = "Registration verification code - Project Management System";
+                await emailService.sendVerificationCode(email, verificationCode, subject);
 
                 return {
                     message: "Sent email verification code",
                     token
                 };
-
+    
             } catch (error) {
                 throw error;
             }
         },
 
-        
         registerAndVerify: async (token, password, code) => {
-        
             try {
                 logInfo(code);
                 if (!token || !password || !code) {
                     throwError('Missing credentials', 400, true);
                 }
-
-                
+           
                 let decoded;
                 
                 try {
@@ -117,7 +121,7 @@ const authService = {
                 const { email, username } = decoded;
 
                 const purpose = 'account_verification';
-                const record = await userModel.findVerificationCodeByEmail(email, purpose);
+                const record = await VerificationCode.findOne({ where: { email, purpose } });
 
                 if (new Date(record.expires_at) < new Date()) {
                     throwError('Verification code expired', 400, true);
@@ -130,8 +134,8 @@ const authService = {
                     throwError('Invalid verification code', 400, true);
                 };
                 
-                await userModel.deleteVerificationCodeByEmail(email, purpose);
-                const data = await userModel.createUser(email, hashedPassword, username);
+                await VerificationCode.destroy({ where: { email, purpose } });
+                const data = await User.create({ email, password: hashedPassword, role: 'user', username });
 
                 return {
                     message: 'Successful registration.',
@@ -146,7 +150,7 @@ const authService = {
         forgotPassword: async (email) => {
             try {
                 
-                const existingUser = userModel.findUserByEmail(email);
+                const existingUser = User.findOne({ where: { email }, attributes: { exclude: ['password'] } });
 
                 if(!existingUser) {
                     throwError('Email is not registered', 404, true);
@@ -159,8 +163,8 @@ const authService = {
                 const expires_at = new Date(Date.now() + 15 * 60 * 1000);
 
                 //delete old code -> insert new code -> send code email
-                await userModel.deleteVerificationCodeByEmail(email, purpose);
-                await userModel.insertVerificationCodeByEmail(email, hashedCode, purpose, expires_at);
+                await VerificationCode.destroy({ where: { email, purpose } });
+                await VerificationCode.create({ email, code_hash: hashedCode, purpose, expires_at });
 
                 const subject = 'Forgot password - Verfication code'
                 await emailService.sendVerificationCode(email, passVerificationCode, subject);
@@ -182,7 +186,7 @@ const authService = {
             };
             
             const purpose = 'password_reset';
-            const record = await userModel.findVerificationCodeByEmail(email, purpose);
+            const record = await VerificationCode.findOne({ where: { email, purpose }});
             
             if(!record) {
                 throwError('No verification code found', 404, true);
@@ -197,7 +201,7 @@ const authService = {
                 throwError('Invalid verification code', 400, true);
             };
 
-            await userModel.deleteVerificationCodeByEmail(email, purpose);
+            await VerificationCode.destroy({ where: { email, purpose }});
 
             return {
                 message: 'Successful verification code',
@@ -213,14 +217,20 @@ const authService = {
             
             try {
                 
-            const record = await userModel.findVerificationCodeByEmail(email, purpose);
-
-             //generate new code to send
-            await userModel.deleteVerificationCodeByEmail(email, purpose);
+            const record = await VerificationCode.findOne({ where: { email, purpose } });
+            await record.destroy();
+            
             const newCode = generateVerificationCode();
             const hashedCode = await bcrypt.hash(newCode.toString(), 10);
             const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-            await userModel.insertVerificationCodeByEmail(email, hashedCode, purpose, expiresAt);
+
+            await VerificationCode.create({ 
+                email, 
+                code_hash: hashedCode, 
+                purpose, 
+                expires_at: expiresAt 
+            });
+
             await emailService.sendVerificationCode(email, newCode, "Resent verification code");
 
             return {
@@ -235,7 +245,7 @@ const authService = {
         confirmNewPassword: async (email, newPassword, confirmPassword) => {
             try {
                 
-                const existingUser = await userModel.findUserByEmail(email);
+                const existingUser = await User.findOne({ where: { email } });
 
                 if(!existingUser) {
                     throwError('User not found', 404, true);
@@ -255,7 +265,10 @@ const authService = {
                 }
 
                 const hashedPassword = await bcrypt.hash(newPassword, 10);
-                const result = await userModel.createNewPassword(email, hashedPassword);
+                const result = await User.update(
+                    { password: hashedPassword }, 
+                    { where: { email } }
+                );
 
                 const loginPageURL = `http://localhost:5173`;
                 await emailService.sendNotification(email, 'Forgot password', `Your password has been changed successfully. Try logging it again ${loginPageURL}`);
@@ -269,11 +282,10 @@ const authService = {
             }
         },
 
-        changePassword: async (userId, oldPassword, newPassword) => {
-            
+        changePassword: async (userId, oldPassword, newPassword) => {   
             try {
             
-                const user = await userModel.findPasswordById(userId);
+                const user = await User.findOne({ where: { id: userId }, attributes: [] });
                 if(!user) {
                     throwError('User not found', 404, true);
                 };
@@ -289,18 +301,19 @@ const authService = {
 
                 const loginPageURL = `http://localhost:5173`;
                 const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-                await userModel.createNewPassword(user.email, hashedNewPassword);
+                await User.update(
+                    { password: hashedNewPassword },
+                    { where: { id: userId} }
+                );
                 await emailService.sendNotification(user.email, 'Change password', `Your password has been changed successfully. Try logging it again ${loginPageURL}`);
                 
                 return {
                     message: "Password changed successfully"
                 };
-
             } catch (error) {
                 throw error;                
             }
         }
-
     }
 
 module.exports = authService;

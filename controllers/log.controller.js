@@ -47,13 +47,13 @@ const logController = {
         }
     },
 
-    getProjectHistoryByUser: async (req, res) => {
+    getProjectHistory: async (req, res) => {
         try {
             
-            const userId = req.user.id;
             const { projectId } = req.query;
             
-            const data = await logService.getProjectHistoryByUser(projectId, userId);
+            const data = await logService.getProjectHistory(projectId);
+            logSuccess(data.message);
             sendSuccess(res, 200, data);
 
         } catch (error) {

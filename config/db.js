@@ -1,26 +1,34 @@
-require('dotenv').config(); // MUST be at the top
-const mysql = require('mysql2/promise');
-const clc = require('cli-color');
+require("dotenv").config();
+const { Sequelize } = require("sequelize");
+const clc = require("cli-color");
 
-const pool = mysql.createPool({
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASS,
+  {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-});
+    dialect: "mysql",
+    logging: false, // set true if you want to see SQL queries
+    pool: {
+      max: 10,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
+  }
+);
 
+// Test the connection
 (async () => {
-    try {
-        const conn = await pool.getConnection();
-        console.log(clc.bgGreen.black('Connected to Database'));
-        conn.release();
-    } catch (error) {
-        console.log(clc.red('DB Connection Error:', error.message));
-        process.exit(1);
-    }
+  try {
+    await sequelize.authenticate();
+    console.log(clc.bgGreen.black("Connected to Database (Sequelize)"));
+  } catch (error) {
+    console.log(clc.red("DB Connection Error:", error.message));
+    process.exit(1);
+  }
 })();
 
-module.exports = pool;
+module.exports = sequelize;

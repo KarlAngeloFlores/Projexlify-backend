@@ -1,181 +1,229 @@
-//import db for transaction
-const db = require('../config/db');
-const projectModel = require('../models/project.model');
-const taskModel = require('../models/task.model');
-const accessModel = require('../models/access.model');
-const { logInfo } = require('../utils/logs.util');
-const { throwError } = require('../utils/util');
+const { Op } = require("sequelize");
+const sequelize = require("../config/db");
+const { Project , ProjectLog, ProjectAccess } = require('../models/associations');
+
+const { logInfo } = require("../utils/logs.util");
+const { throwError } = require("../utils/util");
 
 const projectService = {
-    createProject: async (name, description, userId) => {
-        let connection = await db.getConnection();
-        
-        try {
+  createProject: async (name, description, userId) => {
+    const transaction = await sequelize.transaction(); //start transaction
 
-            const oldStatus = null;
-            const newStatus = "planned";
-            const remark = null;
-            
-            await connection.beginTransaction();
-            
-            const dataProject = await projectModel.insertNewProject(connection, name, description, newStatus, userId);
-            const projectId = dataProject.insertId;
+    try {
+      const newStatus = "planned";
 
-            const dataNewProject = await projectModel.findProjectByProjectId(connection, projectId);
-    
-            await projectModel.insertProjectLogs(connection, projectId, oldStatus, newStatus, remark, userId);
-            await accessModel.insertProjectAccess(connection, userId, projectId, 'owner');
-            
-            await connection.commit();
+      //create project
+      const project = await Project.create(
+        {
+          name,
+          description,
+          status: newStatus,
+          user_id: userId,
+        },
+        {transaction }
+      );
 
-            return {
-                message: 'Project created succesffully',
-                project: dataNewProject
-            }
+      //create project log
+      await ProjectLog.create(
+        {
+          project_id: project.id,
+          old_status: null,
+          new_status: newStatus,
+          remark: null,
+          updated_by: userId,
+        },
+        {transaction }
+      );
 
-        } catch (error) {
-            await connection.rollback();
+      //create project access
+      await ProjectAccess.create(
+        {
+          user_id: userId,
+          project_id: project.id,
+          role: "owner",
+        },
+        { transaction }
+      );
 
-            if (!error.isUserFriendly) {
-            error.isUserFriendly = false;
-            }
+      await transaction.commit();
 
-            throw  error;
-        } finally {
-            connection.release();
-        }
-    },
-
-    updateProject: async (userId, projectId, name, description, newStatus, remark) => {
-        let connection = await db.getConnection();
-        try {
-            const project = await projectModel.findProjectByProjectId(connection, projectId);
-
-            if(!project) {
-                throwError('Project not found', 404, true);
-            };  
-
-            if (
-                project.name === name &&
-                project.description === description &&
-                project.status === newStatus
-            ) {
-                throwError('You must change input fields', 400, true);
-            }
-
-            const oldStatus = project.status || null;
-
-            // if (oldStatus !== newStatus && (!remark || remark.trim() === "")) {
-            //     throwError('Remark is required when changing project status.', 400, true);
-            // };
-
-            await connection.beginTransaction();
-
-            await projectModel.updateProject(connection, projectId, name, description, newStatus);
-
-            const insResult = await projectModel.insertProjectLogs(connection, projectId, oldStatus, newStatus, remark, userId)
-            // const logId = insResult.insertId;
-            
-            const updatedProject = await projectModel.findProjectByProjectId(connection, projectId);
-            // const updatedLog = await projectModel.findUpdatedProjectLog(connection, logId);
-            
-            await connection.commit();
-
-            return {
-                message: 'Project updated successfully',
-                project: updatedProject      
-            }
-            
-        } catch (error) {
-            await connection.rollback();
-
-            if (!error.isUserFriendly) {
-                error.isUserFriendly = false;
-            }
-            
-            throw error;
-        } finally {
-            connection.release();
-        }
-    },
-
-    getProjectsByUser: async (userId) => {
-        try {
-            console.log('userid', userId)
-            const projects = await projectModel.findProjectsByUserId(userId);
-
-            return {
-                message: 'Projects fetched successfully',
-                data: projects || [],
-            }
-            
-        } catch (error) {
-            throw error;
-        }
-    },
-
-    getProjectByProjectId: async (projectId) => {
-        
-        try {
-            
-            const project = await projectModel.findProjectByProjectId(db, projectId);
-            
-            if(!project) {
-                throwError('Project not found', 404);
-            }
-
-            return {
-                message: 'Project fetched successfully',
-                data: project
-            }
-
-        } catch (error) {
-            throw error;
-        }
-    }, 
-
-    deleteProject: async (userId, projectId, remark) => {
-        let connection = await db.getConnection();
-
-        try {
-
-            const project = await projectModel.findProjectByProjectId(connection, projectId);
-
-            if(!project) {
-                throwError('Project not found', 404, true);
-            };
-
-            if(!remark) {
-                throwError('Remark is required upon deleting a project', 404, true);
-            }
-
-            await connection.beginTransaction();
-
-            const oldStatus = project.status;
-            const newStatus = 'deleted';
-
-            await projectModel.updateProjectStatus(connection, newStatus, projectId);
-            await projectModel.insertProjectLogs(connection, projectId, oldStatus, newStatus, remark, userId);
-
-            await connection.commit();
-
-            return {
-                message: 'Project deleted successfully',
-                projectId: projectId
-            };
-
-        } catch (error) {
-            await connection.rollback();
-
-            if (!error.isUserFriendly) {
-            error.isUserFriendly = false;
-            };
-            
-            throw error;
-        } finally {
-            connection.release();
-        }
+      return {
+        message: "Project created successfully",
+        project,
+      };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
-}
+  },
+
+  updateProject: async (
+    userId,
+    projectId,
+    name,
+    description,
+    newStatus,
+    remark
+  ) => {
+    const transaction = await sequelize.transaction();
+    try {
+      const project = await Project.findOne({
+        where: { id: projectId, status: { [Op.ne]: "deleted" } },
+        transaction,
+      });
+
+      if (!project) {
+        throwError("Project not found", 404, true);
+      }
+
+      if (
+        project.name === name &&
+        project.description === description &&
+        project.status === newStatus
+      ) {
+        throwError("You must change input fields", 400, true);
+      }
+
+      const oldStatus = project.status || null;
+
+      // Update project
+      await Project.update(
+        { name, description, status: newStatus },
+        { where: { id: projectId }, transaction }
+      );
+
+      // Insert into project_logs
+      await ProjectLog.create(
+        {
+          project_id: projectId,
+          old_status: oldStatus,
+          new_status: newStatus,
+          remark,
+          updated_by: userId,
+        },
+        { transaction }
+      );
+
+      const updatedProject = await Project.findOne({
+        where: { id: projectId },
+        transaction,
+      });
+
+      await transaction.commit();
+
+      return {
+        message: "Project updated successfully",
+        project: updatedProject,
+      };
+    } catch (error) {
+      await transaction.rollback();
+
+      if (!error.isUserFriendly) {
+        error.isUserFriendly = false;
+      }
+
+      throw error;
+    }
+  },
+
+  getProjectsByUser: async (userId) => {
+    try {
+      const projects = await Project.findAll({
+        where: {
+          user_id: userId,
+          status: { [Op.ne]: "deleted" },
+        },
+      });
+
+      return {
+        message: "Projects fetched successfully",
+        data: projects || [],
+      };
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getProjectByProjectId: async (projectId) => {
+    try {
+      const project = await Project.findOne({
+        where: { id: projectId, status: { [Op.ne]: "deleted" } },
+      });
+
+      if (!project) {
+        throwError("Project not found", 404);
+      }
+
+      return {
+        message: "Project fetched successfully",
+        data: project,
+      };
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  deleteProject: async (userId, projectId, remark) => {
+    const transaction = await sequelize.transaction();
+    try {
+      const project = await Project.findOne({
+        where: { id: projectId },
+        transaction,
+      });
+
+      if (!project) {
+        throwError("Project not found", 404, true);
+      }
+
+      if (!remark || remark.trim() === "") {
+        throwError("Remark is required upon deleting a project", 400, true);
+      }
+
+      const old_status = project.status;
+      const new_status = "deleted";
+
+      await Project.update(
+        { status: new_status },
+        { where: { id: projectId }, transaction }
+      );
+
+      await ProjectLog.create(
+        {
+          project_id: projectId,
+          old_status,
+          new_status,
+          remark,
+          updated_by: userId,
+        },
+        { transaction }
+      );
+
+      await transaction.commit();
+
+      return {
+        message: "Project deleted successfully",
+        projectId,
+      };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  },
+
+  getAllProjects: async () => {
+    try {
+
+      const projects = await Project.findAll({ where: { status: { [Op.ne]: "deleted" } } });
+      
+      return {
+        message: 'All projects fetched successfully',
+        data: projects
+      }
+      
+    } catch (error) {
+      throw error;
+    }
+  }
+};
 
 module.exports = projectService;

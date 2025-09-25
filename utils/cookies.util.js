@@ -2,18 +2,30 @@
  * Cookie configuration for Access Token
  * Short-lived (1 hour)
  */
-const accessTokenCookie = () => {
-    const isProd = process.env.NODE_ENV === 'production';
+const accessTokenCookieProd = () => ({
+  httpOnly: true,
+  secure: true,                      
+  sameSite: 'None',                  
+  maxAge: 60 * 60 * 1000,            // 1 hour
+  path: '/',
+  
+});
 
-    return {
-        httpOnly: true,
-        secure: false,                // HTTPS only in production
-        sameSite: 'Lax',
-        maxAge: 60 * 60 * 1000,         // 1 hour
-        path: '/'
-    };
+const accessTokenCookieDev = () => ({
+  httpOnly: true,
+  secure: false,                     
+  sameSite: 'Lax',                   
+  maxAge: 60 * 60 * 1000,            // 1 hour
+  path: '/'
+});
+
+const accessTokenCookie = () => {
+  const isProd = process.env.NODE_ENV === 'production';
+  return isProd ? accessTokenCookieProd() : accessTokenCookieDev();
 };
 
 module.exports = {
-    accessTokenCookie,
+  accessTokenCookie,
+  accessTokenCookieProd,
+  accessTokenCookieDev,
 };
