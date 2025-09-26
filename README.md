@@ -1,5 +1,10 @@
 # Projexlify - Project Management Web App
 > Backend
+## Deployment
+- **Backend:** [https://projexlify-backend-1.onrender.com](https://projexlify-backend-1.onrender.com)
+- **Frontend:** [https://projexlify.netlify.app/](https://projexlify.netlify.app/)
+
+> Note: For local development, frontend runs on `http://localhost:5173` and backend on `http://localhost:5000`.
 
 #### This repository contains the Backend of the Projexlify - Project Management App, developed with Node.js + Express + MySQL.
 It provides REST APIs for projects, tasks, and authentication.
@@ -27,7 +32,9 @@ The frontend consumes these APIs to manage projects and tasks effectively.
 - **MySQL integration** – database management with mysql2
 - **Admin bypass** – admins can access and manage all projects, tasks, and logs
 
-## Installation & Setup
+
+
+## Installation & Setup for local (development)
 > **Important:** For the backend to be fully functional, you must **run the frontend after running this.** 
 
 >Frontend repository: **link**
