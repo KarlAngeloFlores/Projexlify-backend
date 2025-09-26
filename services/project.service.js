@@ -198,10 +198,16 @@ const projectService = {
         { transaction }
       );
 
+          const deletedProject = await Project.findOne({
+      where: { id: projectId },
+      transaction,
+    });
+
       await transaction.commit();
 
       return {
         message: "Project deleted successfully",
+        project: deletedProject,
         projectId,
       };
     } catch (error) {
@@ -212,8 +218,8 @@ const projectService = {
 
   getAllProjects: async () => {
     try {
-
-      const projects = await Project.findAll({ where: { status: { [Op.ne]: "deleted" } } });
+      //{ where: { status: { [Op.ne]: "deleted" } } } 
+      const projects = await Project.findAll();
       
       return {
         message: 'All projects fetched successfully',
@@ -223,7 +229,93 @@ const projectService = {
     } catch (error) {
       throw error;
     }
+  },
+
+restoreProject: async (userId, projectId) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const project = await Project.findOne({ where: { id: projectId }, transaction });
+
+    if (!project) {
+      throwError("Project not found", 404, true);
+    }
+
+    if (project.status !== "deleted") {
+      throwError("Project is not deleted", 400, true);
+    }
+
+    //find last log not deleted
+    const lastLog = await ProjectLog.findOne({
+      where: {
+        project_id: projectId,
+        new_status: { [Op.ne]: "deleted" },
+      },
+      order: [["created_at", "DESC"]],
+      transaction,
+    });
+
+    if (!lastLog) {
+      throwError("No previous status found for restore", 400, true);
+    }
+
+    const restoreStatus = lastLog.new_status;
+
+    //update the project status to its last status
+    await Project.update(
+      { status: restoreStatus },
+      { where: { id: projectId }, transaction }
+    );
+
+    await ProjectLog.create(
+      {
+        project_id: projectId,
+        old_status: project.status,
+        new_status: restoreStatus,
+        remark: "Project restored",
+        updated_by: userId,
+      },
+      { transaction }
+    );
+
+    const restoredProject = await Project.findOne({
+      where: { id: projectId },
+      transaction,
+    });
+
+    await transaction.commit();
+
+    return {
+      message: "Project restored successfully",
+      project: restoredProject,
+    };
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
   }
+},
+
+  hardDeleteProject: async (id) => {
+    try {
+      
+      const project = await Project.findByPk(id);
+      
+      if(!project) {
+        throwError('Project not found', 404, true);
+      };
+
+      await project.destroy();
+      
+      return {
+        message: 'Project deleted permanently',
+        id
+      };
+
+    } catch (error) {
+      throw error
+    }
+  },
+
+
 };
 
 module.exports = projectService;

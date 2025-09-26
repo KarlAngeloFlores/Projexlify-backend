@@ -100,6 +100,36 @@ const projectController = {
             sendError(res, 500, getFriendlyErrorMessage(error));
         }
     },
+
+    hardDeleteProject: async (req, res) => {
+        try {
+            
+            const { id } = req.query;
+
+            const result = await projectService.hardDeleteProject(id);
+            logSuccess(result.message);
+            sendSuccess(res, 200, result);
+
+        } catch (error) {
+            logError(error);
+            sendError(res, 500, getFriendlyErrorMessage(error));
+        }
+    },
+
+    restoreProject: async (req, res) => {
+        try {
+            
+            const userId = req.user.id;
+            const { id } = req.body;
+
+            const result = await projectService.restoreProject(userId, id);
+            sendSuccess(res, 200, result);
+
+        } catch (error) {
+            logError(error);
+            sendError(res, 500, getFriendlyErrorMessage(error));
+        }
+    }
 }
 
 module.exports = projectController; 

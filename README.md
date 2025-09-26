@@ -20,7 +20,7 @@ The frontend consumes these APIs to manage projects and tasks effectively.
 ## Features
 - **User authentication** – register, login, JWT-based authentication
 - **Role-based authorization** – single login with user/admin access levels
-- **Project management** – create, view, update, delete projects
+- **Project management** – create, view, update, delete, hard delete, and restore projects
 - **Task management** – add, update, delete tasks
 - **Route protection** – secured with JWT and HTTP-only cookies
 - **Secure password storage** – hashed using bcrypt
@@ -243,6 +243,8 @@ DELETE | `/api/project/delete_task`           | Soft delete task               |
 | Method | Endpoint                   | Description               | Auth Required | Authorization (check Admin) | Params/Body/Query |
 |--------|----------------------------|---------------------------|---------------|--------------------------------| ------------------|
 | GET    | `/api/admin/get_all_projects`| Get all the projects of all users | ✅ | Admin only  | None |
+| PATCH    | `/api/admin/restore_project`| Restore soft deleted project to its old status | ✅ | Admin only  | **Query:** `{ id }` |
+| DELETE    | `/api/admin/delete_project`| Delete permanently the project | ✅ | Admin only  | **Query:** `{ id }` |
 | GET    | `/api/admin/get_users`| Get all the users | ✅ | Admin only  | None |
 | DELETE    | `/api/admin/delete_user`| Delete permanently the user | ✅ | Admin only  | **Query:** `{ id }` |
 | PATCH    | `/api/admin/patch_user`| Update only the username of the user | ✅ | Admin only | **Body:** `{ id, username }` |

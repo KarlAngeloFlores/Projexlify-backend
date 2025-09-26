@@ -10,6 +10,9 @@ const router = express.Router();
 
 //projects
 router.get('/get_all_projects', auth, checkAdmin, projectController.getAllProjects);
+router.delete('/delete_project', auth, checkAdmin, projectController.hardDeleteProject);
+router.patch('/restore_project', auth, checkAdmin, projectController.restoreProject);
+
 //users
 router.get('/get_users', auth, checkAdmin, userController.getAllUsers);
 router.delete('/delete_user', auth, checkAdmin, userController.deleteUser);
