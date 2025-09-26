@@ -25,7 +25,7 @@ const accessTokenCookieDev = () => ({
 // };
 
 const accessTokenCookie = () => {
-  return accessTokenCookieDev();
+  return accessTokenCookieProd();
 };
 
 module.exports = {

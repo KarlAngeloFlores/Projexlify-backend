@@ -58,73 +58,78 @@ const projectService = {
   },
 
   updateProject: async (
-    userId,
-    projectId,
-    name,
-    description,
-    newStatus,
-    remark
-  ) => {
-    const transaction = await sequelize.transaction();
-    try {
-      const project = await Project.findOne({
-        where: { id: projectId, status: { [Op.ne]: "deleted" } },
-        transaction,
-      });
+  userId,
+  projectId,
+  name,
+  description,
+  newStatus,
+  remark
+) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const project = await Project.findOne({
+      where: { id: projectId, status: { [Op.ne]: "deleted" } },
+      transaction,
+    });
 
-      if (!project) {
-        throwError("Project not found", 404, true);
-      }
-
-      if (
-        project.name === name &&
-        project.description === description &&
-        project.status === newStatus
-      ) {
-        throwError("You must change input fields", 400, true);
-      }
-
-      const oldStatus = project.status || null;
-
-      // Update project
-      await Project.update(
-        { name, description, status: newStatus },
-        { where: { id: projectId }, transaction }
-      );
-
-      // Insert into project_logs
-      await ProjectLog.create(
-        {
-          project_id: projectId,
-          old_status: oldStatus,
-          new_status: newStatus,
-          remark,
-          updated_by: userId,
-        },
-        { transaction }
-      );
-
-      const updatedProject = await Project.findOne({
-        where: { id: projectId },
-        transaction,
-      });
-
-      await transaction.commit();
-
-      return {
-        message: "Project updated successfully",
-        project: updatedProject,
-      };
-    } catch (error) {
-      await transaction.rollback();
-
-      if (!error.isUserFriendly) {
-        error.isUserFriendly = false;
-      }
-
-      throw error;
+    if (!project) {
+      throwError("Project not found", 404, true);
     }
-  },
+
+    if (
+      project.name === name &&
+      project.description === description &&
+      project.status === newStatus
+    ) {
+      throwError("You must change input fields", 400, true);
+    }
+
+    //remark is required
+    if (!remark || remark.trim() === "") {
+      throwError("Remark is required when updating a project", 400, true);
+    }
+
+    const oldStatus = project.status || null;
+
+    // Update project
+    await Project.update(
+      { name, description, status: newStatus },
+      { where: { id: projectId }, transaction }
+    );
+
+    // Insert into project_logs
+    await ProjectLog.create(
+      {
+        project_id: projectId,
+        old_status: oldStatus,
+        new_status: newStatus,
+        remark,
+        updated_by: userId,
+      },
+      { transaction }
+    );
+
+    const updatedProject = await Project.findOne({
+      where: { id: projectId },
+      transaction,
+    });
+
+    await transaction.commit();
+
+    return {
+      message: "Project updated successfully",
+      project: updatedProject,
+    };
+  } catch (error) {
+    await transaction.rollback();
+
+    if (!error.isUserFriendly) {
+      error.isUserFriendly = false;
+    }
+
+    throw error;
+  }
+},
 
   getProjectsByUser: async (userId) => {
     try {
