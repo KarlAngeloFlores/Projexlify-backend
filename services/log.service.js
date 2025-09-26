@@ -38,7 +38,7 @@ const logService = {
         const transaction = await sequelize.transaction();
         try {
             
-            await Task.create({ 
+            await TaskLog.create({ 
                 task_id: taskId,
                 old_status: oldStatus,
                 new_status: newStatus,

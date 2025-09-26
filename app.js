@@ -7,7 +7,7 @@ const app = express();
 
 //to add rate limiter
 
-const allowedOrigins = ['http://localhost:5173', 'http://192.168.1.7:5173', 'https://projexlify.netlify.app'];
+const allowedOrigins = ['http://localhost:5173', 'http://192.168.1.8:5173', 'https://projexlify.netlify.app'];
 
 app.use(cors({
     origin: allowedOrigins,

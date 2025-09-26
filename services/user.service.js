@@ -43,7 +43,7 @@ const userService = {
 updateUser: async (id, username) => {
   try {
 
-    const existingUser = await User.findOne({ where: { username }, attributes: { exclude: ['password'] } });
+    const existingUser = await User.findOne({ where: { username }, attributes: ["id"] });
 
     if (existingUser && existingUser.id !== id) {
       throwError("Username already exists.", 400, true);

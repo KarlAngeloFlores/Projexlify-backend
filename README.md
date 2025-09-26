@@ -8,20 +8,24 @@ The frontend consumes these APIs to manage projects and tasks effectively.
 ## Tech Stack
 - **Node.js** – Runtime environment
 - **Express.js** – Web framework
+- **sequelize** - ORM for interacting with the MySQL database
 - **MySQL** – Relational database
 - **JWT** – Authentication & authorization
 - **bcrypt** – Password hashing
 - **dotenv** – Environment variables
 - **cookie-parser** – HTTP-only cookies
-- **nodemailer** – Email notifications
+- **@sendgrid/mail** - Email notifications (for production) limited
+- **nodemailer** – Email notifications (for development)
 
 ## Features
-- **User authentication** - (register, login, JWT-based auth)
-- **Project management** - (create, view, update, delete projects)
-- **Task management** - (add, update, delete tasks)
-- **Route protection** - with JWT & cookies
-- **Secure password** - storage with bcrypt
-- **MySQL integration** - using mysql2
+- **User authentication** – register, login, JWT-based authentication
+- **Role-based authorization** – single login with user/admin access levels
+- **Project management** – create, view, update, delete projects
+- **Task management** – add, update, delete tasks
+- **Route protection** – secured with JWT and HTTP-only cookies
+- **Secure password storage** – hashed using bcrypt
+- **MySQL integration** – database management with mysql2
+- **Admin bypass** – admins can access and manage all projects, tasks, and logs
 
 ## Installation & Setup
 > **Important:** For the backend to be fully functional, you must **run the frontend after running this.** 
@@ -39,21 +43,20 @@ The frontend consumes these APIs to manage projects and tasks effectively.
 npm install
 ```
 
-### 3. Open MySQL Client
+### 3. Create MySQL Tables
 ### MySQL TABLES
 ## Execute all of this on your MySQL Platform
 ```
--- =====================
--- USERS TABLE
--- =====================
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    username VARCHAR(100) UNIQUE, -- optional public identifier
+    role VARCHAR(255) NOT NULL,
+    username VARCHAR(100) UNIQUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
 -- =====================
 -- PROJECTS TABLE
 -- =====================
@@ -67,6 +70,7 @@ CREATE TABLE projects (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
 -- =====================
 -- TASKS TABLE
 -- =====================
@@ -81,10 +85,10 @@ CREATE TABLE tasks (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
+
 -- =====================
 -- TASK LOGS TABLE
 -- =====================
-
 CREATE TABLE task_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     task_id INT NOT NULL,
@@ -120,7 +124,7 @@ CREATE TABLE project_logs (
 CREATE TABLE projects_access (
     user_id INT NOT NULL,
     project_id INT NOT NULL,
-    role VARCHAR(50) NOT NULL DEFAULT 'read',  -- flexible role storage
+    role VARCHAR(50) NOT NULL DEFAULT 'read',
     PRIMARY KEY (user_id, project_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
@@ -141,19 +145,29 @@ CREATE TABLE verification_codes (
 
 ```
 
-### 4. Configure a .file in the project root
+### 4. Configure environment variables
 #### Create a **.env** file in the project root:
 ```
-PORT=5000
-DB_PORT=your_db_port
-DB_USER=your_user_port
-DB_PASS=your_db_pass
-DB_NAME=your_db_name
+# Database
+DB_PORT=3306
+DB_USER=root
+DB_PASS=your_password
+DB_NAME=project_management
 
-EMAIL=your_email
-EMAIL_PASS=your_smtp_password_or_app_password
-
+# JWT
 JWT_SECRET=your_jwt_secret
+
+# Email (development: nodemailer)
+EMAIL_DEV=your_dev_email
+EMAIL_PASS_DEV=your_dev_email_password
+
+# Email (production: SendGrid)
+EMAIL=your_verified_sendgrid_email
+SENDGRID_API_KEY=your_sendgrid_api_key
+
+# Client URL (frontend)
+CLIENT_URL=http://localhost:5173
+
 ```
 
 ### 5. Run development server
@@ -176,7 +190,7 @@ npm run dev
 | POST   | `/api/auth/register` | Pre-register new user        | ❌ | **Body:** `{ username, email, password }` |
 | POST    | `/api/auth/verify`       | verify and register new user | ❌ | **Body:** `{ token, password, code }` | 
 | POST   | `/api/auth/logout` | Clear accessToken on Http Cookie         | ✅ | None |
-| PATCH   | `/api/auth/change_password`    | Login & get JWT token    | ✅ | **Body:** `{ oldPassword, newPassword }` |
+| PATCH   | `/api/auth/change_password`    | Change user password   | ✅ | **Body:** `{ oldPassword, newPassword }` |
 | POST    | `/api/auth/forgot_password`       | Sends verification code for changing passsword | ❌ | **Body:** `{ email }` |
 | POST   | `/api/auth/verify_reset_password` | Verify sent code from email        | ❌ | **Body:** `{ email, code }` |
 | PATCH   | `/api/auth/confirm_password`    | Update the user's password to new password    | ❌ | **Body:** `{ email, newPassword, confirmPassword }` |
@@ -218,19 +232,30 @@ DELETE | `/api/project/delete_task`           | Soft delete task               |
 | GET    | `/api/log/get_projects_log`| Get all the logs of a project itself (not task) | ✅ | owner  | **Body:** `{ projectId }` |
 | GET    | `/api/log/get_tasks_log`| Get all the logs of all tasks of a specific project | ✅ | owner  | **Body:** `{ projectId }` |
 
-### 🔑 Access Emoji (Incomplete scalable functionality)
+### 👩🏻‍💻 Admin 
+#### Admins have extended privileges:
+
+- Can bypass project/task ownership checks
+- Can view and manage all users, projects, tasks, and logs
+### Example
+> http://localhost:5000/admin/get_users
+
+| Method | Endpoint                   | Description               | Auth Required | Authorization (check Admin) | Params/Body/Query |
+|--------|----------------------------|---------------------------|---------------|--------------------------------| ------------------|
+| GET    | `/api/admin/get_all_projects`| Get all the projects of all users | ✅ | Admin only  | None |
+| GET    | `/api/admin/get_users`| Get all the users | ✅ | Admin only  | None |
+| DELETE    | `/api/admin/delete_user`| Delete permanently the user | ✅ | Admin only  | **Query:** `{ id }` |
+| PATCH    | `/api/admin/patch_user`| Update only the username of the user | ✅ | Admin only | **Body:** `{ id, username }` |
+
+### 🔑 (Incomplete scalable functionality)
 ### Example 
 > http://localhost:5000/access/get_shared
 
 | Method | Endpoint                   | Description               | Auth Required | Authorization (project access) | Params/Body/Query |
 |--------|----------------------------|---------------------------|---------------|--------------------------------| ------------------|
-| GET    | `/api/access/get_shared`| Get all shared projects from others | ✅ | Any logged-in user  | None |
 | POST    | `/api/access/give_access`| Give project access to chosen users **(write, read)** | ✅ | None  | **Body:** `{ email, projectId, role }` |
 | PATCH    | `/api/access/patch_access`| Change project access of the chosen user **(write, read)** | ✅ | None | **Body:** `{ userId, projectId, role }` |
 | DELETE    | `/api/access/delete_access`| Remove all access of the chosen user | ✅ | None  | **Body:** `{ userId, projectId }` |
-
-
-
 
 ## Incomplete functionalities (other scalable features that can be added with the project)
 ### Real-time collaboration within a project

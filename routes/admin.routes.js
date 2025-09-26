@@ -8,13 +8,11 @@ const checkAdmin = require('../middlewares/checkAdmin');
 
 const router = express.Router();
 
-//users
-router.get('/users', auth, checkAdmin, userController.getAllUsers);
-router.delete('/user', auth, checkAdmin, userController.deleteUser);
-router.patch('/user', auth, checkAdmin, userController.updateUser);
 //projects
-router.get('/projects', auth, checkAdmin, projectController.getAllProjects);
-
-
+router.get('/get_all_projects', auth, checkAdmin, projectController.getAllProjects);
+//users
+router.get('/get_users', auth, checkAdmin, userController.getAllUsers);
+router.delete('/delete_user', auth, checkAdmin, userController.deleteUser);
+router.patch('/patch_user', auth, checkAdmin, userController.updateUser);
 
 module.exports = router;

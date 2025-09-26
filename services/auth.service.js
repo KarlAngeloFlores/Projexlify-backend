@@ -150,7 +150,7 @@ const authService = {
         forgotPassword: async (email) => {
             try {
                 
-                const existingUser = User.findOne({ where: { email }, attributes: { exclude: ['password'] } });
+                const existingUser = await User.findOne({ where: { email }, attributes: { exclude: ['password'] } });
 
                 if(!existingUser) {
                     throwError('Email is not registered', 404, true);
@@ -218,7 +218,11 @@ const authService = {
             try {
                 
             const record = await VerificationCode.findOne({ where: { email, purpose } });
-            await record.destroy();
+
+            if(record) {
+                await record.destroy();
+            }
+            
             
             const newCode = generateVerificationCode();
             const hashedCode = await bcrypt.hash(newCode.toString(), 10);
@@ -270,7 +274,7 @@ const authService = {
                     { where: { email } }
                 );
 
-                const loginPageURL = `http://localhost:5173`;
+                const loginPageURL = process.env.CLIENT_URL; //frontend url
                 await emailService.sendNotification(email, 'Forgot password', `Your password has been changed successfully. Try logging it again ${loginPageURL}`);
 
                 return {
@@ -292,7 +296,7 @@ const authService = {
 
                 const isMatchOldPassword = await bcrypt.compare(oldPassword, user.password);
                 if(!isMatchOldPassword) {
-                    throwError('Old password do not match');
+                    throwError('Old password do not match', 400, true);
                 };
 
                 if(oldPassword === newPassword) {

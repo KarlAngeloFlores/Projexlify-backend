@@ -94,7 +94,7 @@ const taskService = {
             const data = await Task.findOne({ where: { id: taskId } });
             
             if(!data) {
-                throwError('Task not found', 400, true);
+                throwError('Task not found', 404, true);
             }
 
             return {

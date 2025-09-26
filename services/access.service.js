@@ -1,4 +1,3 @@
-const db = require('../config/db');
 const { User, Project, ProjectAccess } = require('../models/associations');
 const { throwError } = require('../utils/util');
 
@@ -13,7 +12,7 @@ const accessService = {
                 throwError('User not found', 404, true);
             };
             
-            const project = await Project.findOne({ where: { project_id: projectId } });
+            const project = await Project.findOne({ where: { id: projectId } });
 
             if(!project) {
                 throwError('Project not found', 404, true);
@@ -70,7 +69,10 @@ const accessService = {
                 throwError('Invalid role', 400, true);
             }
 
-            await ProjectAccess.update({ role }, { where: { project_id: projectId, user_id: userId } }); //userId, projectId, newRole
+            await ProjectAccess.update(
+              { role: newRole },
+              { where: { project_id: projectId, user_id: userId } }
+            ); //userId,, projectId, newRole
 
             return { message: 'Access updated successfully' };
         } catch (error) {
@@ -97,22 +99,6 @@ const accessService = {
             throw error;
         }
     },
-
-    // getSharedProjects: async (userId) => {
-    //     try {
-            
-    //         const data = await accessModel.findSharedProject(userId);
-
-    //         return {
-    //             message: 'Fetched shared project successfully',
-    //             data: data || []
-    //         }
-
-    //     } catch (error) {
-    //         throw error;
-    //     }
-    // }
-
 };
 
 module.exports = accessService;

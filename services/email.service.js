@@ -2,23 +2,18 @@ const nodemailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// const transporter = nodemailer.createTransport({
-//     host: 'smtp.sendgrid.net',
-//     port: 587,
-//     auth: {
-//         user: 'apikey', // literally the word "apikey"
-//         pass: process.env.SENDGRID_API_KEY
-//     }
-// });
-
-// const transporter = nodemailer.createTransport({
-//     host: 'smtp.gmail.com',
-//     port: 465,
-//     auth: {
-//         user: process.env.EMAIL,
-//         pass: process.env.EMAIL_PASS
-//     }
-// })
+/**
+ * @example for development only on sending emails for verifications.
+ */
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secureL: true,
+    auth: {
+        user: process.env.EMAIL_DEV,
+        pass: process.env.EMAIL_PASS_DEV
+    }
+})
 
 const emailService = {
 sendVerificationCode: async (email, verificationCode, subject) => {
