@@ -96,7 +96,7 @@ createTask: async (req, res) => {
             const { tasks, taskId, newStatus, projectId } = req.body;
 
             const result = await taskService.updateTaskStatus(tasks, taskId, newStatus, userId, projectId);
-            logSuccess(result);
+            logSuccess(result.message);
             sendSuccess(res, 200, result);
             
         } catch (error) {

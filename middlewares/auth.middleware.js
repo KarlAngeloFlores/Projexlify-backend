@@ -1,6 +1,5 @@
-const clc = require('cli-color');
 const jwt = require('jsonwebtoken');
-const { logInfo, logSuccess, logSuccessMiddleware } = require('../utils/logs.util');
+const { logSuccessMiddleware, logError } = require('../utils/logs.util');
 
 //access token is required for this middleware to get userId
 const auth = (req, res, next) => {
@@ -19,7 +18,7 @@ const auth = (req, res, next) => {
         next();
 
     } catch (error) {
-        console.log(clc.red('Error:', error.message));
+        logError(error.message);
         return res.status(403).json({
             message: 'Invalid or expired token'
         });

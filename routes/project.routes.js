@@ -7,7 +7,6 @@ const checkProjectAccess = require('../middlewares/checkProjectAccess.middleware
 
 const router = express.Router();
 
-
     router.get('/get_all_project', auth, projectController.getAllProjectByUser);
     router.get('/get_project', auth, checkProjectAccess(['owner']), projectController.getProjectByProjectId);   
     router.post('/create_project', auth, projectController.createProject); 

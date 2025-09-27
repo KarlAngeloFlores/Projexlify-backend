@@ -1,6 +1,6 @@
 const ProjectAccess = require('../models/access.model');
 const Project = require('../models/project.model');
-const { logError, logInfo, logSuccess, logSuccessMiddleware } = require('../utils/logs.util');
+const { logError, logSuccessMiddleware } = require('../utils/logs.util');
 const { sendError, getFriendlyErrorMessage } = require('../utils/util');
 
 //userId and projectId is required for this middlesware, if admin bypass
@@ -42,7 +42,7 @@ const checkProjectAccess = (allowedRoles = []) => {
             next();
 
         } catch (error) {
-            logError(error);
+            logError(error.message);
             sendError(res, 500, getFriendlyErrorMessage(error));
         }
     }

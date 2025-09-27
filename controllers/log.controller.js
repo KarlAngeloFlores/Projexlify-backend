@@ -1,5 +1,5 @@
 const logService = require("../services/log.service");
-const { logSuccess, logInfo, logError } = require("../utils/logs.util");
+const { logSuccess, logError } = require("../utils/logs.util");
 const { sendError, sendSuccess, getFriendlyErrorMessage } = require("../utils/util");
 
 const logController = {
@@ -65,8 +65,8 @@ const logController = {
         try {
 
             const { projectId } = req.query;
-
             const data = await logService.getTasksHistoryByProject(projectId);
+            logSuccess(data.message);
             sendSuccess(res, 200, data);
             
         } catch (error) {

@@ -1,8 +1,6 @@
 const { Op } = require("sequelize");
 const sequelize = require("../config/db");
 const { Project , ProjectLog, ProjectAccess } = require('../models/associations');
-
-const { logInfo } = require("../utils/logs.util");
 const { throwError } = require("../utils/util");
 
 const projectService = {

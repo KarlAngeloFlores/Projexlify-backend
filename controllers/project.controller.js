@@ -78,7 +78,7 @@ const projectController = {
             const { projectId, remark } = req.body;
             
             const result = await projectService.deleteProject(userId, projectId, remark);
-            logSuccess(result);
+            logSuccess(result.message);
             sendSuccess(res, 200, result);
             
         } catch (error) {

@@ -2,7 +2,6 @@ const { sendError, sendSuccess, getFriendlyErrorMessage } = require('../utils/ut
 const { logInfo, logSuccess, logError } = require('../utils/logs.util');
 const { accessTokenCookie } = require('../utils/cookies.util');
 const authService = require('../services/auth.service');
-const userService = require('../services/user.service');
 
 const authController = {
     login: async (req, res) => {

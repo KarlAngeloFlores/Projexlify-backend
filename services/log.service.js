@@ -1,7 +1,7 @@
 const sequelize = require('../config/db');
 const { User, ProjectLog, TaskLog, Task } = require('../models/associations');
-
 const { throwError } = require('../utils/util');
+
 const logService = {
     
     /**

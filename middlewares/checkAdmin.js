@@ -14,7 +14,7 @@ const checkAdmin = (req, res, next) => {
     next();
     
     } catch (error) {
-        logError(error);
+        logError(error.message);
         sendError(res, 500, getFriendlyErrorMessage(error));
     }
     

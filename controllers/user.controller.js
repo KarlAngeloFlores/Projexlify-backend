@@ -1,4 +1,4 @@
-const { logInfo, logSuccess, logError } = require("../utils/logs.util");
+const { logSuccess, logError } = require("../utils/logs.util");
 const {
   sendError,
   sendSuccess,
