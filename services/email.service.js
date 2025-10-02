@@ -1,28 +1,40 @@
-const nodemailer = require('nodemailer');
-const sgMail = require('@sendgrid/mail');
+const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 /**
  * @example for development only on sending emails for verifications.
  */
+const transporterDev = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secureL: true,
+  auth: {
+    user: process.env.EMAIL_DEV,
+    pass: process.env.EMAIL_PASS_DEV,
+  },
+});
+
+/**
+ * @BREVO_MAIL
+ */
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secureL: true,
-    auth: {
-        user: process.env.EMAIL_DEV,
-        pass: process.env.EMAIL_PASS_DEV
-    }
-})
+  host: process.env.BREVO_HOST,
+  port: process.env.BREVO_PORT,
+  auth: {
+    user: process.env.BREVO_EMAIL,
+    pass: process.env.BREVO_PASS,
+  },
+});
 
 const emailService = {
-sendVerificationCode: async (email, verificationCode, subject) => {
+  sendVerificationCode: async (email, verificationCode, subject) => {
     try {
-        await sgMail.send({
-            from: process.env.EMAIL,
-            to: email,
-            subject: subject,
-            html: `
+      await transporter.sendMail({
+        from: process.env.EMAIL,
+        to: email,
+        subject: subject,
+        html: `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 24px; background: #f4f6f8; border-radius: 12px; border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
   
   <!-- Header -->
@@ -54,17 +66,16 @@ sendVerificationCode: async (email, verificationCode, subject) => {
     © ${new Date().getFullYear()} Projexlify. All rights reserved.
   </p>
 </div>
-            `
-        });
+            `,
+      });
     } catch (error) {
-        throw error;
+      throw error;
     }
-},
+  },
 
-    sendNotification: async (email, subject, message) => {
-        try {
-
-        await sgMail.send({
+  sendNotification: async (email, subject, message) => {
+    try {
+      await transporter.sendMail({
         from: process.env.EMAIL,
         to: email,
         subject: subject,
@@ -93,14 +104,12 @@ sendVerificationCode: async (email, verificationCode, subject) => {
     © ${new Date().getFullYear()} Projexlify. All rights reserved.
   </p>
 </div>
-        `
-        });
-
-
-        } catch (error) {
-            throw error;
-        }
+        `,
+      });
+    } catch (error) {
+      throw error;
     }
-}
+  },
+};
 
 module.exports = emailService;
