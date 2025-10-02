@@ -155,9 +155,12 @@ CREATE TABLE verification_codes (
 ### 4. Configure environment variables
 #### Create a **.env** file in the project root:
 ```
+# PORT
+PORT=your_backend_port
+
 # Database
-DB_PORT=3306
-DB_USER=root
+DB_PORT=your_db_port
+DB_USER=your_db_user
 DB_PASS=your_password
 DB_NAME=project_management
 
@@ -178,7 +181,7 @@ CLIENT_URL=http://localhost:5173
 ```
 
 ### 5. Run development server
-#### Type this on terminal on frontend directory  
+#### Type this on terminal on backend directory  
 ```
 npm run dev
 ```
