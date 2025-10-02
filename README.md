@@ -6,31 +6,31 @@
 
 > Note: For local development, frontend runs on `http://localhost:5173` and backend on `http://localhost:5000`.
 
-#### This repository contains the Backend of the Projexlify - Project Management App, developed with Node.js + Express + MySQL.
+#### This repository contains the **Backend of the Projexlify - Project Management Web App**, built with **Node.js, Express, and MySQL**.
 It provides REST APIs for projects, tasks, and authentication.
 The frontend consumes these APIs to manage projects and tasks effectively.
 
 ## Tech Stack
 - **Node.js** – Runtime environment
 - **Express.js** – Web framework
-- **sequelize** - ORM for interacting with the MySQL database
+- **Sequelize** - ORM for interacting with the MySQL database
 - **MySQL** – Relational database
 - **JWT** – Authentication & authorization
 - **bcrypt** – Password hashing
 - **dotenv** – Environment variables
 - **cookie-parser** – HTTP-only cookies
-- **@sendgrid/mail** - Email notifications (for production) limited
+- **Brevo** - Email notifications (production, limited usage)
 - **nodemailer** – Email notifications (for development)
 
 ## Features
 - **User authentication** – register, login, JWT-based authentication
 - **Role-based authorization** – single login with user/admin access levels
-- **Project management** – create, view, update, delete, hard delete, and restore projects
+- **Project management** – create, view, update, soft delete, permanently delete, and restore projects
 - **Task management** – add, update, delete tasks
 - **Route protection** – secured with JWT and HTTP-only cookies
 - **Secure password storage** – hashed using bcrypt
 - **MySQL integration** – database management with mysql2
-- **Admin bypass** – admins can access and manage all projects, tasks, and logs
+- **Admin bypass (privileges)** – admin can access and manage all projects, tasks, and logs
 
 
 
@@ -171,9 +171,12 @@ JWT_SECRET=your_jwt_secret
 EMAIL_DEV=your_dev_email
 EMAIL_PASS_DEV=your_dev_email_password
 
-# Email (production: SendGrid)
-EMAIL=your_verified_sendgrid_email
-SENDGRID_API_KEY=your_sendgrid_api_key
+# Email and Configurations (production: Brevo)
+EMAIL=your_verified_email
+BREVO_PORT=your_brevo_port
+BREVO_PASS=your_brevo_pass
+BREVO_HOST=your_smtp_host
+BREVO_EMAIL=your_verified_brevo_login_email
 
 # Client URL (frontend)
 CLIENT_URL=http://localhost:5173
@@ -201,7 +204,7 @@ npm run dev
 | POST    | `/api/auth/verify`       | verify and register new user | ❌ | **Body:** `{ token, password, code }` | 
 | POST   | `/api/auth/logout` | Clear accessToken on Http Cookie         | ✅ | None |
 | PATCH   | `/api/auth/change_password`    | Change user password   | ✅ | **Body:** `{ oldPassword, newPassword }` |
-| POST    | `/api/auth/forgot_password`       | Sends verification code for changing passsword | ❌ | **Body:** `{ email }` |
+| POST    | `/api/auth/forgot_password`       | Sends verification code for changing password | ❌ | **Body:** `{ email }` |
 | POST   | `/api/auth/verify_reset_password` | Verify sent code from email        | ❌ | **Body:** `{ email, code }` |
 | PATCH   | `/api/auth/confirm_password`    | Update the user's password to new password    | ❌ | **Body:** `{ email, newPassword, confirmPassword }` |
 | POST    | `/api/auth/resend_code`       | Reusable for sending verification code for registration and forgot password | ❌ | **Body:** `{ email, purpose }` |
@@ -217,7 +220,7 @@ npm run dev
 | GET    | `/api/project/get_project` | Get one project  | ✅  | owner (only their own projects) | **Query:** `{ projectId }` |
 | POST   | `/api/project/create_project`                 | Create new project        | ✅ | Any logged-in user | **Body:** `{ name, description }` |
 | PATCH    | `/api/project/patch_project`             | Update Project with remark or none       | ✅  | owner | **Body:** `{ projectId, name, description, newStatus, remark }` | 
-| DELETE | `/api/project/delete_project`             | Soft Delete project            | ✅             | owner | **Body** `{ projectId, remark }` |
+| DELETE | `/api/project/delete_project`             | Soft delete project            | ✅             | owner | **Body** `{ projectId, remark }` |
 
 
 ### ✅ Tasks
