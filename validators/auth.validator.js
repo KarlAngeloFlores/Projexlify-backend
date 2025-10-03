@@ -12,9 +12,9 @@ const authValidator = {
             return sendError(res, 400, "Valid email is required");
         }
 
-        if (!password || password.length < 6) {
-            return sendError(res, 400, "Password must be at least 6 characters long");
-        }
+    if (!password) {
+        return sendError(res, 400, "Password is required");
+    }
 
         next();
     },
@@ -44,8 +44,8 @@ registerAndVerify: (req, res, next) => {
         return sendError(res, 400, "Token is missing or invalid. Please register again.");
     }
 
-    if (!password || password.length < 6) {
-        return sendError(res, 400, "Password must be at least 6 characters long");
+    if (!password) {
+        return sendError(res, 400, "Password is required");
     }
 
     if (!code) {
@@ -87,8 +87,8 @@ registerAndVerify: (req, res, next) => {
             return sendError(res, 400, "Valid email is required");
         }
 
-        if (!newPassword || newPassword.length < 6) {
-            return sendError(res, 400, "New password must be at least 6 characters long");
+        if (!newPassword) {
+            return sendError(res, 400, "New password is required");
         }
 
         if (newPassword !== confirmPassword) {
@@ -119,8 +119,8 @@ registerAndVerify: (req, res, next) => {
             return sendError(res, 400, "Old password is required");
         }
 
-        if (!newPassword || newPassword.length < 6) {
-            return sendError(res, 400, "New password must be at least 6 characters long");
+        if (!newPassword) {
+            return sendError(res, 400, "New password is required");
         }
 
         next();
