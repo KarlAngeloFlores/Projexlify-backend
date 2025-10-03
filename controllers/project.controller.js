@@ -56,7 +56,6 @@ const projectController = {
 
     getAllProjectByUser: async (req, res) => {
         try {
-            logInfo(req.user)
             const userId = req.user.id;
             const data = await projectService.getProjectsByUser(userId);
             logSuccess(data.message);
@@ -68,8 +67,6 @@ const projectController = {
             sendError(res, statusCode, getFriendlyErrorMessage(error));
         }
     },
-
-
 
     deleteProject: async (req, res) => {
         try {

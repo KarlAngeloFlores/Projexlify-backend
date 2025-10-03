@@ -2,20 +2,22 @@ const express = require('express');
 const authController = require('../controllers/auth.controller');
 const auth = require('../middlewares/auth.middleware');
 const userController = require('../controllers/user.controller');
+const authValidator = require('../validators/auth.validator');
+const userValidator = require('../validators/user.validator');
 
 const router = express.Router();
 
-router.post('/login', authController.login);
+router.post('/login', authValidator.login, authController.login);
 
-router.post('/register', authController.register);
-router.post('/verify', authController.registerAndVerify);
-router.post('/logout', authController.logout);
-router.patch('/change_password', auth, authController.changePassword);
-router.post('/forgot_password', authController.forgotPassword);
-router.post('/verify_reset_password', authController.verifyResetPassword);
-router.patch('/confirm_password', authController.confirmNewPassword);
-router.post('/resend_code', authController.resendVerificationCode);
+router.post('/register', authValidator.register, authController.register);
+router.post('/verify', authValidator.registerAndVerify, authController.registerAndVerify);
+router.post('/logout', auth, authController.logout);
+router.patch('/change_password', auth, authValidator.changePassword, authController.changePassword);
+router.post('/forgot_password', authValidator.forgotPassword, authController.forgotPassword);
+router.post('/verify_reset_password', authValidator.verifyResetPassword, authController.verifyResetPassword);
+router.patch('/confirm_password', authValidator.confirmNewPassword, authController.confirmNewPassword);
+router.post('/resend_code', authValidator.resendVerificationCode, authController.resendVerificationCode);
 
 router.get('/me', auth, authController.me);
-router.get('/get_member', auth, userController.getUser);
+router.get('/get_member', auth, userValidator.getUser, userController.getUser);
 module.exports = router;

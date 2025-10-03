@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const clc = require('cli-color');
 
 /**
  * @return {String} random six digits

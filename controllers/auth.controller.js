@@ -96,9 +96,6 @@ const authController = {
         try {
             
             const { email, code } = req.body;
-
-            
-            logInfo(email, code)
             const result = await authService.verifyResetPassword(email, code);
             logSuccess(result.message);
             sendSuccess(res, 200, result);

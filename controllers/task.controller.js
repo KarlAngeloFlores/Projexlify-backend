@@ -75,7 +75,6 @@ createTask: async (req, res) => {
         try {
 
             const userId = req.user.id;
-            // const { taskId } = req.query;
             const { taskId, projectId, remark } = req.body;
 
             const result = await taskService.deleteTask(userId, taskId, projectId, remark);

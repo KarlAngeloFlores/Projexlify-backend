@@ -49,20 +49,6 @@ const accessControler = {
             sendError(res, statusCode, getFriendlyErrorMessage(error));
         }
     },
-
-    getSharedProjects: async (req, res) => {
-        try {
-            
-            const userId = req.user.id;
-            const data = await accessService.getSharedProjects(userId);
-            logSuccess(data.message);
-            sendSuccess(res, 200, data);
-
-        } catch (error) {
-            logError(error.message);
-            sendError(res, 500, getFriendlyErrorMessage(error));
-        }
-    }
 };
 
 module.exports = accessControler;

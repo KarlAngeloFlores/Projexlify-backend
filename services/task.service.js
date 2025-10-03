@@ -1,6 +1,5 @@
 const { Op, fn, col } = require('sequelize');
 const sequelize = require('../config/db');
-const { logInfo } = require('../utils/logs.util');
 const { throwError } = require('../utils/util');
 const { Project, Task, TaskLog} = require('../models/associations')
 
@@ -261,8 +260,6 @@ updateTaskStatus: async (tasks, taskId, newStatus, userId, projectId) => {
   const transaction = await sequelize.transaction();
 
   try {
-    logInfo('PROJECTID: ', projectId);
-    // find if it exists
     const task = await Task.findOne({ where: 
         { id: taskId, status: { [Op.ne]: "deleted" } } });
 
