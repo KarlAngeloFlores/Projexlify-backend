@@ -12,18 +12,24 @@ const authValidator = {
             return sendError(res, 400, "Valid email is required");
         }
 
-    if (!password) {
-        return sendError(res, 400, "Password is required");
-    }
+        if (!password || password.length < 6) {
+            return sendError(res, 400, "Password must be at least 6 characters long");
+        }
 
         next();
     },
 
     register: (req, res, next) => {
-        const { email, username } = req.body;
+        const { email, username, password } = req.body;
 
         if (!email || !isValidEmail(email)) {
             return sendError(res, 400, "Valid email is required");
+        }
+
+        //password is only validated here but the frontend will send it
+
+        if (!password || password.length < 6) {
+            return sendError(res, 400, "Password must be at least 6 characters long");
         }
 
         if (!username || username.length < 3) {
@@ -44,8 +50,8 @@ registerAndVerify: (req, res, next) => {
         return sendError(res, 400, "Token is missing or invalid. Please register again.");
     }
 
-    if (!password) {
-        return sendError(res, 400, "Password is required");
+    if (!password || password.length < 6) {
+        return sendError(res, 400, "Password must be at least 6 characters long");
     }
 
     if (!code) {
@@ -87,8 +93,8 @@ registerAndVerify: (req, res, next) => {
             return sendError(res, 400, "Valid email is required");
         }
 
-        if (!newPassword) {
-            return sendError(res, 400, "New password is required");
+        if (!newPassword || newPassword.length < 6) {
+            return sendError(res, 400, "New password must be at least 6 characters long");
         }
 
         if (newPassword !== confirmPassword) {
@@ -119,8 +125,8 @@ registerAndVerify: (req, res, next) => {
             return sendError(res, 400, "Old password is required");
         }
 
-        if (!newPassword) {
-            return sendError(res, 400, "New password is required");
+        if (!newPassword || newPassword.length < 6) {
+            return sendError(res, 400, "New password must be at least 6 characters long");
         }
 
         next();
