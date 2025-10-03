@@ -194,6 +194,18 @@ Update accessTokenCookie return value in the utils folder to accessTokenCookieDe
 npm run dev
 ```
 
+#### 7. Troubleshooting
+
+**If authentication or login fails**
+
+- Try using a different browser.
+
+- On iPhone/iOS Safari, go to Settings → Safari → Privacy & Security and disable “Prevent Cross-Site Tracking”. This setting can block cookies needed for authentication.
+
+- Some browsers (like Edge in private mode) block third-party cookies by default. Test in a normal browser session (Chrome/Firefox recommended).
+
+- Make sure you updated accessTokenCookie to accessTokenCookieDev() in utils/cookies.js when running locally.
+
 
 ## 📌 API Endpoints  
 ### 🔐 Authentication
