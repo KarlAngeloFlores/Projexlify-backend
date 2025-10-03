@@ -183,7 +183,12 @@ CLIENT_URL=http://localhost:5173
 
 ```
 
-### 5. Run development server
+### 5. Configure cookies.js in utils folder properly for authentication.
+``` 
+Update accessTokenCookie return value in the utils folder to accessTokenCookieDev() when running locally.
+```
+
+### 6. Run development server
 #### Type this on terminal on backend directory  
 ```
 npm run dev
