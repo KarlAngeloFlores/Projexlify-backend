@@ -5,8 +5,6 @@ const cors = require('cors');
 const sequelize = require('./config/db');
 const app = express();
 
-//to add rate limiter
-
 const allowedOrigins =
   process.env.NODE_ENV === 'production'
     ? ['https://projexlify.netlify.app'] //only production

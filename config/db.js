@@ -10,7 +10,7 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: "mysql",
-    logging: false, // set true if you want to see SQL queries
+    logging: false, //true for queries
     pool: {
       max: 20,
       min: 0,
@@ -20,7 +20,7 @@ const sequelize = new Sequelize(
   }
 );
 
-// Test the connection
+//test connection
 (async () => {
   try {
     await sequelize.authenticate();
