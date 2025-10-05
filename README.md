@@ -200,8 +200,6 @@ npm run dev
 
 - Some browsers (like Edge in private mode) block third-party cookies by default. Test in a normal browser session (Chrome/Firefox recommended).
 
-- Make sure you updated accessTokenCookie to accessTokenCookieDev() in utils/cookies.js when running locally.
-
 
 ## 📌 API Endpoints  
 ### 🔐 Authentication
