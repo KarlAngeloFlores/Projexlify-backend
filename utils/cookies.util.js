@@ -19,13 +19,12 @@ const accessTokenCookieDev = () => ({
   path: '/'
 });
 
-// const accessTokenCookie = () => {
-//   const isProd = process.env.NODE_ENV === 'Production';
-//   return isProd ? accessTokenCookieProd() : accessTokenCookieDev();
-// };
-
+/**
+ * @returns access token cookie configuration if production or development
+ */
 const accessTokenCookie = () => {
-  return accessTokenCookieProd();
+  const isProd = process.env.NODE_ENV === 'production'
+  return isProd ? accessTokenCookieProd() : accessTokenCookieDev();
 };
 
 module.exports = {

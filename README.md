@@ -149,12 +149,14 @@ CREATE TABLE verification_codes (
     expires_at DATETIME NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
 ```
 
 ### 4. Configure environment variables
 #### Create a **.env** file in the project root:
 ```
+# Environment
+NODE_ENV=production_or_development
+
 # PORT
 PORT=your_backend_port
 
@@ -180,21 +182,15 @@ BREVO_EMAIL=your_verified_brevo_login_email
 
 # Client URL (frontend)
 CLIENT_URL=http://localhost:5173
-
 ```
 
-### 5. Configure cookies.js in utils folder properly for authentication.
-``` 
-Update accessTokenCookie return value in the utils folder to accessTokenCookieDev() when running locally.
-```
-
-### 6. Run development server
+### 5. Run development server
 #### Type this on terminal on backend directory  
 ```
 npm run dev
 ```
 
-#### 7. Troubleshooting
+#### 6. Troubleshooting
 
 **If authentication or login fails**
 
